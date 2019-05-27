@@ -15,12 +15,12 @@ namespace SystemicalConsensusBot
 
         }
 
-        public void Vote(long pollId, int[] votes)
+        public void Vote(long pollId, int userID, int[] votes)
         {
 
             Poll poll = Connection.GetPoll(pollId);
 
-
+            poll.ParticipantVotes[userID] = votes;
 
 
         }
