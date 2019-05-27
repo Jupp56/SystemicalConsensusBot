@@ -9,6 +9,7 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
+        IDatabaseConnection Connection;
         static void Main(string[] args)
         {
 
@@ -16,7 +17,8 @@ namespace SystemicalConsensusBot
 
         public void Vote(long pollId, int[] votes)
         {
-            Poll poll = getPoll(pollId);
+
+            Poll poll = Connection.GetPoll(pollId);
 
 
 

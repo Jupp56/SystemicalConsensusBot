@@ -8,7 +8,7 @@ namespace SystemicalConsensusBot
 {
     public interface IDatabaseConnection
     {
-        Poll GetPoll(int id);
+        Poll GetPoll(long id);
         Poll SavePoll(Poll poll);
         List<Poll> GetPollsByOwner(int ownerID);
     }
