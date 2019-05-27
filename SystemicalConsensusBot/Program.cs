@@ -113,6 +113,7 @@ namespace SystemicalConsensusBot
                                 send(e.Message.From.Id, "Topic or Answers not set");
                             }
                         }
+                        break;
 
                 }
             }
