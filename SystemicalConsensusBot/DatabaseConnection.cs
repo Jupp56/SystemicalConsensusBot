@@ -16,6 +16,7 @@ namespace SystemicalConsensusBot
         private static readonly Random random = new Random();
         public DatabaseConnection(string databaseFilePath)
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(databaseFilePath));
             if (!File.Exists(databaseFilePath)) File.WriteAllText(databaseFilePath, JsonConvert.SerializeObject(new Dictionary<long, Poll>()));
             FilePath = databaseFilePath;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,12 +16,15 @@ namespace SystemicalConsensusBot
     {
         private static TelegramBotClient Bot;
 
-        private static DatabaseConnection databaseConnection = new DatabaseConnection("Filepath");
+        private static DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\SystemicalConsensusBot", "database.json"));
 
         private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
         static void Main(string[] args)
         {
-            Bot = new TelegramBotClient("blah");
+            Bot = new TelegramBotClient("837217253:AAH2CFNeWuG6bbjajf7dNQTXe7MVZiB8ho0");
+
+            var result = Bot.GetUpdatesAsync(-1, 1).Result;
+            if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
 
             Bot.OnMessage += BotOnMessageReceived;
             Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
@@ -70,49 +74,62 @@ namespace SystemicalConsensusBot
 
             if (e.Message.Entities[0].Type == MessageEntityType.BotCommand)
             {
+                int UserId = e.Message.From.Id;
+                if (!ConversationStates.Exists(x => x.UserId == e.Message.From.Id)) WelcomeUser(UserId);
                 switch (e.Message.EntityValues.ElementAt(0))
                 {
                     case "/start":
-                        WelcomeUser(e.Message.From.Id);
 
                         break;
 
                     case "/cancel":
                     case "/stop":
-                        RemoveUser(e.Message.From.Id);
+                        RemoveUser(UserId);
                         break;
 
                     case "/topic":
-                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
-                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).Topic = e.Message.EntityValues.ElementAt(1);
-                        else
+                        try
                         {
-                            WelcomeUser(e.Message.From.Id);
+                            string topic = e.Message.Text.Split(' ')[1];
+                            ConversationStates.Find(x => x.UserId == UserId).Topic = topic;
+                            send(UserId, "Set topic to: " + topic);
+                            break;
                         }
-                        break;
+                        catch (Exception ex)
+                        {
+                            send(UserId, "No topic provided!");
+                            break;
+                        }
+
 
                     case "/answer":
-                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
-                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).Answers.Add(e.Message.EntityValues.ElementAt(1));
-                        else
+                        try
                         {
-                            WelcomeUser(e.Message.From.Id);
+                            string answerToAdd = e.Message.Text.Split(' ')[1];
+                            ConversationStates.Find(x => x.UserId == UserId).Answers.Add(answerToAdd);
+                            send(UserId, "Added answer: " + answerToAdd);
+                            break;
                         }
-                        break;
+                        catch
+                        {
+                            send(UserId, "No answer provided!");
+                            break;
+
+                        }
+
 
                     case "/save":
-                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
-                        {
-                            ConversationState conversationState = ConversationStates.Find(x => x.UserId == e.Message.From.Id);
-                            if (!(conversationState.Topic is null) && !(conversationState.Answers is null))
-                            {
 
-                            }
-                            else
-                            {
-                                send(e.Message.From.Id, "Topic or Answers not set");
-                            }
+                        ConversationState conversationState = ConversationStates.Find(x => x.UserId == UserId);
+                        if (!(conversationState.Topic is null) && !(conversationState.Answers is null))
+                        {
+
                         }
+                        else
+                        {
+                            send(UserId, "Topic or Answers not set");
+                        }
+
                         break;
 
                 }
