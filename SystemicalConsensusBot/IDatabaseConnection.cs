@@ -11,6 +11,5 @@ namespace SystemicalConsensusBot
         Poll GetPoll(long id);
         Poll SavePoll(Poll poll);
         List<Poll> GetPollsByOwner(int ownerID);
-        void SetBotToken(string token);
     }
 }

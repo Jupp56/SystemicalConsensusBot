@@ -15,12 +15,12 @@ namespace SystemicalConsensusBot
     {
         private static TelegramBotClient Bot;
 
-        private IDatabaseConnection databaseConnection;
+        private static DatabaseConnection databaseConnection = new DatabaseConnection("Filepath");
 
         private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
         static void Main(string[] args)
         {
-            Bot = new TelegramBotClient(databaseConnection.GetBotToken());
+            Bot = new TelegramBotClient("blah");
 
             Bot.OnMessage += BotOnMessageReceived;
             Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
@@ -34,8 +34,34 @@ namespace SystemicalConsensusBot
             Bot.StopReceiving();
         }
 
+        #region userInteraction
+        public static void WelcomeUser(int UserId)
+        {
+            send(UserId, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"\nTo save the poll, use \"/save\"");
 
-        
+            if (ConversationStates.Exists(x => x.UserId == UserId))
+            {
+                ConversationStates.Find(x => x.UserId == UserId).InteractionState = ConversationState.InteractionStates.started;
+            }
+
+            else
+            {
+                ConversationStates.Add(new ConversationState(UserId));
+            }
+        }
+
+
+        public static void RemoveUser(int UserId)
+        {
+            ConversationStates.Remove(ConversationStates.Find(x => x.UserId == UserId));
+        }
+        #endregion
+
+        public static void send(int userId, string message)
+        {
+            Bot.SendTextMessageAsync(userId, message);
+        }
+
 
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
@@ -47,31 +73,52 @@ namespace SystemicalConsensusBot
                 switch (e.Message.EntityValues.ElementAt(0))
                 {
                     case "/start":
+                        WelcomeUser(e.Message.From.Id);
 
-                        Bot.SendTextMessageAsync(e.Message.From.Id, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"");
-
-                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id)){
-                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).InteractionState = ConversationState.InteractionStates.started;
-                        }
-
-                        else
-                        {
-                            ConversationStates.Add(new ConversationState(e.Message.From.Id));
-                        }
                         break;
 
                     case "/cancel":
                     case "/stop":
-                      
-                       //delete here
+                        RemoveUser(e.Message.From.Id);
                         break;
 
                     case "/topic":
-                        
+                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
+                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).Topic = e.Message.EntityValues.ElementAt(1);
+                        else
+                        {
+                            WelcomeUser(e.Message.From.Id);
+                        }
                         break;
+
+                    case "/answer":
+                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
+                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).Answers.Add(e.Message.EntityValues.ElementAt(1));
+                        else
+                        {
+                            WelcomeUser(e.Message.From.Id);
+                        }
+                        break;
+
+                    case "/save":
+                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id))
+                        {
+                            ConversationState conversationState = ConversationStates.Find(x => x.UserId == e.Message.From.Id);
+                            if (!(conversationState.Topic is null) && !(conversationState.Answers is null))
+                            {
+
+                            }
+                            else
+                            {
+                                send(e.Message.From.Id, "Topic or Answers not set");
+                            }
+                        }
+
                 }
             }
         }
+
+
 
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
         {
