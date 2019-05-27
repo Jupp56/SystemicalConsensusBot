@@ -15,13 +15,14 @@ namespace SystemicalConsensusBot
     class Program
     {
         private static TelegramBotClient Bot;
-
-        private static DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "\\SystemicalConsensusBot", "database.json"));
+        
+        private static DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
 
         private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
         static void Main(string[] args)
         {
-            Bot = new TelegramBotClient("837217253:AAH2CFNeWuG6bbjajf7dNQTXe7MVZiB8ho0");
+            Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
+            Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
 
             var result = Bot.GetUpdatesAsync(-1, 1).Result;
             if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
