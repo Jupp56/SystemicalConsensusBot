@@ -12,12 +12,14 @@ namespace SystemicalConsensusBot
         public int OwnerId { get; }
         public int AnswerCount { get; }
         public bool IsLocked { get; private set; }
+        public string[] Answers { get; }
         private Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
 
-        public Poll(int ownerId, int answerCount)
+        public Poll(int ownerId, int answerCount, string[] answers)
         {
             this.OwnerId = ownerId;
             this.AnswerCount = answerCount;
+            this.Answers = answers;
         }
 
         private double[] ComputeResult()

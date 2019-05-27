@@ -67,7 +67,6 @@ namespace SystemicalConsensusBot
             Bot.SendTextMessageAsync(userId, message);
         }
 
-
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
@@ -124,7 +123,7 @@ namespace SystemicalConsensusBot
                         ConversationState conversationState = ConversationStates.Find(x => x.UserId == UserId);
                         if (!(conversationState.Topic is null) && !(conversationState.Answers is null))
                         {
-
+                            databaseConnection.SavePoll(new Poll(UserId, conversationState.Answers.Count, conversationState.Answers.ToArray()));
                         }
                         else
                         {
@@ -132,12 +131,9 @@ namespace SystemicalConsensusBot
                         }
 
                         break;
-
                 }
             }
         }
-
-
 
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
         {
