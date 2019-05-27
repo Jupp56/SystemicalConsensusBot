@@ -17,7 +17,7 @@ namespace SystemicalConsensusBot
 
         private IDatabaseConnection databaseConnection;
 
-        private static Dictionary<int, InteractionStates> ConversationStates { get; set; } = new Dictionary<int, InteractionStates>();
+        private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
         static void Main(string[] args)
         {
             Bot = new TelegramBotClient(databaseConnection.GetBotToken());
@@ -35,28 +35,42 @@ namespace SystemicalConsensusBot
         }
 
 
-        enum InteractionStates
-        {
-            notstarted,
-            started,
-            parametersSend,
-            finished
-        }
+        
 
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
             if (e.Message.Chat.Type != ChatType.Private) return;
 
-            switch (e.Message.Text)
+            if (e.Message.Entities[0].Type == MessageEntityType.BotCommand)
             {
-                case ("/start"):
-                    ConversationStates[e.Message.From.Id] = InteractionStates.started;
-                    break;
+                switch (e.Message.EntityValues.ElementAt(0))
+                {
+                    case "/start":
 
+                        Bot.SendTextMessageAsync(e.Message.From.Id, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"");
 
+                        if (ConversationStates.Exists(x => x.UserId == e.Message.From.Id)){
+                            ConversationStates.Find(x => x.UserId == e.Message.From.Id).InteractionState = ConversationState.InteractionStates.started;
+                        }
+
+                        else
+                        {
+                            ConversationStates.Add(new ConversationState(e.Message.From.Id));
+                        }
+                        break;
+
+                    case "/cancel":
+                    case "/stop":
+                      
+                       //delete here
+                        break;
+
+                    case "/topic":
+                        
+                        break;
+                }
             }
-
         }
 
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
