@@ -12,7 +12,7 @@ namespace SystemicalConsensusBot
         public int OwnerId { get; }
         public int AnswerCount { get; }
         public bool IsLocked { get; private set; }
-        public Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
+        private Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
 
         public Poll(int ownerId, int answerCount)
         {
@@ -48,6 +48,12 @@ namespace SystemicalConsensusBot
         public void Lock()
         {
             IsLocked = true;
+        }
+
+        public void Vote(int userID, int[] votes)
+        {
+            if (!IsLocked)
+                ParticipantVotes[userID] = votes;
         }
     }
 }

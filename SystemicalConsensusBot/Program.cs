@@ -9,19 +9,8 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
-        IDatabaseConnection Connection;
         static void Main(string[] args)
         {
-
-        }
-
-        public void Vote(long pollId, int userID, int[] votes)
-        {
-
-            Poll poll = Connection.GetPoll(pollId);
-
-            poll.ParticipantVotes[userID] = votes;
-
 
         }
     }
