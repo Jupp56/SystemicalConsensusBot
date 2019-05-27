@@ -11,17 +11,13 @@ namespace SystemicalConsensusBot
         public long PollID { get; internal set; } = -1;
         public int OwnerId { get; }
         public int AnswerCount { get; }
+        public bool IsLocked { get; private set; }
         public Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
 
         public Poll(int ownerId, int answerCount)
         {
             this.OwnerId = ownerId;
             this.AnswerCount = answerCount;
-        }
-
-        public double[] GetPollResults()
-        {
-            return ComputeResult();
         }
 
         private double[] ComputeResult()
@@ -44,5 +40,14 @@ namespace SystemicalConsensusBot
             return results.ToArray();
         }
 
+        public double[] GetPollResults()
+        {
+            return ComputeResult();
+        }
+
+        public void Lock()
+        {
+            IsLocked = true;
+        }
     }
 }
