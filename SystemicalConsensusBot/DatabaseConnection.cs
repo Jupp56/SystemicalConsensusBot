@@ -63,5 +63,16 @@ namespace SystemicalConsensusBot
             }
             return poll;
         }
+
+        public void DeletePoll(Poll poll)
+        {
+            lock (FilePath)
+            {
+                if (poll.PollID == -1) return;
+                var dict = GetDict();
+                dict.Remove(poll.PollID);
+                SetDict(dict);
+            }
+        }
     }
 }
