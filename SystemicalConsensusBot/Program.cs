@@ -19,7 +19,7 @@ namespace SystemicalConsensusBot
                             "This is the systemic consensing Bot.\n" +
                             "\n" +
                             "<i>What is systemic consensing?</i>\n" +
-                            "Systemic consensing is a way to vote. However, instead of voting for one specific option, every participant assignes a personal resistance value to every option. In the end, the option with the lowest resistance value wins.\n" +
+                            "Systemic consensing is a way to vote. However, instead of voting for one specific option, every participant assignes a personal resistance value ranging from 0 to 10 to every option. In the end, the option with the lowest resistance value wins.\n" +
                             "\n" +
                             "<i>Why should I let people vote with this system?</i>\n" +
                             "This system reduces stress, as it does not return the best option for only some people, but the most acceptable option for as many participants as possible. Fewer people are unhappy with the end result.\n" +
