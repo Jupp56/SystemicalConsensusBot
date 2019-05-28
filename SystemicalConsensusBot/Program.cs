@@ -109,7 +109,7 @@ namespace SystemicalConsensusBot
                     switch (state.InteractionState)
                     {
                         case ConversationState.InteractionStates.TopicAsked:
-                            state.Topic = e.Message.Text;
+                            state.Topic = e.Message.Text.Escape();
                             Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
                             state.InteractionState = ConversationState.InteractionStates.AnswerAsked;
                             break;
@@ -122,8 +122,8 @@ namespace SystemicalConsensusBot
                             }
                             else
                             {
-                                state.Answers.Add(e.Message.Text);
-                                Send(UserId, $"Added answer \"{e.Message.Text}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
+                                state.Answers.Add(e.Message.Text.Escape());
+                                Send(UserId, $"Added answer \"{e.Message.Text.Escape()}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
                             }
                             break;
                     }
