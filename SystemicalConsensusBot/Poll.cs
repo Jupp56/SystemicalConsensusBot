@@ -98,10 +98,18 @@ namespace SystemicalConsensusBot
             IsLocked = true;
         }
 
-        public void Vote(int userID, int[] votes)
+        public bool Vote(int userID, int answerId, int change)
         {
             if (!IsLocked)
-                ParticipantVotes[userID] = votes;
+            {
+                ParticipantVotes[userID][answerId] += change;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            
         }
     }
 }
