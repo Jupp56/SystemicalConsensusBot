@@ -63,7 +63,7 @@ namespace SystemicalConsensusBot
                 double[] results = ComputeResult();
                 for (int i = 0; i < Answers.Length; i++)
                 {
-                    message += $"\n{i}. {Answers[i]}: {results[i]}";
+                    message += $"\n{i}. {Answers[i]}: {results[i]:N2}";
                 }
 
                 return message;
@@ -79,7 +79,7 @@ namespace SystemicalConsensusBot
             {
                 InlineKeyboardButton[] row = new InlineKeyboardButton[3];
                 row[0] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:-", Text = "-" };
-                row[1] = new InlineKeyboardButton { CallbackData = "null", Text = $"{counter}." };
+                row[1] = new InlineKeyboardButton { CallbackData = $"showone:{PollID}:{counter}", Text = $"{counter}." };
                 row[2] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:+", Text = "+" };
                 rows.Add(row);
                 counter++;
@@ -117,6 +117,8 @@ namespace SystemicalConsensusBot
 
         public int[] GetUserVotes(int userId)
         {
+            if (!ParticipantVotes.ContainsKey(userId))
+                ParticipantVotes[userId] = new int[Answers.Length];
             return ParticipantVotes[userId];
         }
         

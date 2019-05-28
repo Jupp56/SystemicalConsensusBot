@@ -258,6 +258,15 @@ namespace SystemicalConsensusBot
                                 Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: results, showAlert: true);
                             }
                             break;
+
+                        case "showone":
+                            {
+                                long pollId = Convert.ToInt64(data[1]);
+                                Poll poll = databaseConnection.GetPoll(pollId);
+                                string result = $"{poll.GetUserVotes(userId)[Convert.ToInt32(data[2])]}";
+                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, result);
+                                break;
+                            }
                         case "close":
                      
                             {
