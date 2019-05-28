@@ -165,7 +165,7 @@ namespace SystemicalConsensusBot
             Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
         }
 
-        private static int ModifiedLevenshteinDistance(string source, string target)
+        private static double ModifiedLevenshteinDistance(string source, string target)
         {
             if (string.IsNullOrEmpty(source))
             {
@@ -183,7 +183,7 @@ namespace SystemicalConsensusBot
 
             var m = target.Length;
             var n = source.Length;
-            var distance = new int[2, m + 1];
+            var distance = new double[2, m + 1];
             // Initialize the distance matrix
             for (var j = 1; j <= m; j++) distance[0, j] = j;
 
@@ -197,8 +197,8 @@ namespace SystemicalConsensusBot
                 {
                     var cost = (target[j - 1] == source[i - 1] ? 0 : 1);
                     distance[currentRow, j] = Math.Min(Math.Min(
-                                distance[previousRow, j] + 100,
-                                distance[currentRow, j - 1] + 100),
+                                distance[previousRow, j] + 0.1,
+                                distance[currentRow, j - 1] + 0.1),
                                 distance[previousRow, j - 1] + cost);
                 }
             }
