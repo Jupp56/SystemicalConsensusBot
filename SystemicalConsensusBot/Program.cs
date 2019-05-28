@@ -18,7 +18,7 @@ namespace SystemicalConsensusBot
         
         private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
 
-        private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
+        private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
         static void Main()
         {
             Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
@@ -42,23 +42,23 @@ namespace SystemicalConsensusBot
         #region userInteraction
         public static void WelcomeUser(int UserId)
         {
-            Send(UserId, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"\nTo save the poll, use \"/save\"");
+            Send(UserId, "Welcome to Systemical Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please send me the topic for you poll.");
 
-            if (ConversationStates.Exists(x => x.UserId == UserId))
+            if (ConversationStates.ContainsKey(UserId))
             {
-                ConversationStates.Find(x => x.UserId == UserId).InteractionState = ConversationState.InteractionStates.started;
+                ConversationStates[UserId].InteractionState = ConversationState.InteractionStates.TopicAsked;
             }
 
             else
             {
-                ConversationStates.Add(new ConversationState(UserId));
+                ConversationStates.Add(UserId, new ConversationState());
             }
         }
 
 
         public static void RemoveUser(int UserId)
         {
-            ConversationStates.Remove(ConversationStates.Find(x => x.UserId == UserId));
+            if (ConversationStates.ContainsKey(UserId)) ConversationStates.Remove(UserId);
         }
         #endregion
 
@@ -71,65 +71,46 @@ namespace SystemicalConsensusBot
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
             if (e.Message.Chat.Type != ChatType.Private) return;
+            int UserId = e.Message.From.Id;
 
-            if (e.Message.Entities[0].Type == MessageEntityType.BotCommand)
+            if (e.Message.Entities?.Length > 0 && e.Message.Entities[0].Type == MessageEntityType.BotCommand)
             {
-                int UserId = e.Message.From.Id;
-                if (!ConversationStates.Exists(x => x.UserId == e.Message.From.Id)) WelcomeUser(UserId);
+                if (!ConversationStates.ContainsKey(UserId))
+                {
+                    WelcomeUser(UserId);
+                    return;
+                }
                 switch (e.Message.EntityValues.ElementAt(0))
                 {
-                    case "/start":
-
-                        break;
-
                     case "/cancel":
                     case "/stop":
                         RemoveUser(UserId);
+                        Send(UserId, "Canceled whatever I was doing just now.");
+                        return;
+                }
+            }
+            if (ConversationStates.ContainsKey(UserId))
+            {
+                var state = ConversationStates[UserId];
+                switch (state.InteractionState)
+                {
+                    case ConversationState.InteractionStates.TopicAsked:
+                        state.Topic = e.Message.Text;
+                        Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
+                        state.InteractionState = ConversationState.InteractionStates.AnswerAsked;
                         break;
-
-                    case "/topic":
-                        try
+                    case ConversationState.InteractionStates.AnswerAsked:
+                        if (e.Message.Text == "/done" || e.Message.Text == "/save")
                         {
-                            string topic = e.Message.Text.Split(' ')[1];
-                            ConversationStates.Find(x => x.UserId == UserId).Topic = topic;
-                            Send(UserId, "Set topic to: " + topic);
-                            break;
-                        }
-                        catch
-                        {
-                            Send(UserId, "No topic provided!");
-                            break;
-                        }
-
-
-                    case "/answer":
-                        try
-                        {
-                            string answerToAdd = e.Message.Text.Split(' ')[1];
-                            ConversationStates.Find(x => x.UserId == UserId).Answers.Add(answerToAdd);
-                            Send(UserId, "Added answer: " + answerToAdd);
-                            break;
-                        }
-                        catch
-                        {
-                            Send(UserId, "No answer provided!");
-                            break;
-
-                        }
-
-
-                    case "/save":
-
-                        ConversationState conversationState = ConversationStates.Find(x => x.UserId == UserId);
-                        if (!(conversationState.Topic is null) && !(conversationState.Answers is null))
-                        {
-                            databaseConnection.SavePoll(new Poll(UserId, conversationState.Answers.Count, conversationState.Answers.ToArray()));
+                            databaseConnection.SavePoll(new Poll(UserId, state.Answers.Count, state.Answers.ToArray()));
+                            Send(UserId, "Poll was saved successfully!");   //TODO send and share poll, inline keyboard
+                            RemoveUser(UserId);
                         }
                         else
                         {
-                            Send(UserId, "Topic or Answers not set");
+                            state.Answers.Add(e.Message.Text);
+                            Send(UserId, $"Added answer \"{e.Message.Text}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
                         }
-
                         break;
                 }
             }

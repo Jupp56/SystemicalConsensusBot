@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,14 +7,24 @@ using System.Threading.Tasks;
 
 namespace SystemicalConsensusBot
 {
+    [JsonObject(MemberSerialization = MemberSerialization.OptOut)]
     public class Poll
     {
+        [JsonProperty]
         public long PollID { get; internal set; } = -1;
+        [JsonProperty]
         public int OwnerId { get; }
+        [JsonProperty]
         public int AnswerCount { get; }
+        [JsonProperty]
         public bool IsLocked { get; private set; }
+        [JsonProperty]
         public string[] Answers { get; }
+        [JsonProperty]
         private Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
+
+        [JsonConstructor]
+        private Poll() { }
 
         public Poll(int ownerId, int answerCount, string[] answers)
         {

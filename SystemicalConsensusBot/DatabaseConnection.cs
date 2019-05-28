@@ -12,9 +12,6 @@ namespace SystemicalConsensusBot
     public class DatabaseConnection : IDatabaseConnection
     {
         private readonly string FilePath;
-#pragma warning disable 0649
-        private static readonly object Lock;
-#pragma warning restore 0649
         private static readonly Random random = new Random();
         public DatabaseConnection(string databaseFilePath)
         {
@@ -47,7 +44,7 @@ namespace SystemicalConsensusBot
 
         public Poll SavePoll(Poll poll)
         {
-            lock (Lock)
+            lock (FilePath)
             {
                 var dict = GetDict();
                 if (poll.PollID == -1)
@@ -58,7 +55,7 @@ namespace SystemicalConsensusBot
                         byte[] buf = new byte[8];
                         random.NextBytes(buf);
                         longRand = BitConverter.ToInt64(buf, 0);
-                    } while (dict.ContainsKey(longRand));
+                    } while (longRand < 0 || dict.ContainsKey(longRand));
                 }
                 dict[poll.PollID] = poll;
                 SetDict(dict);

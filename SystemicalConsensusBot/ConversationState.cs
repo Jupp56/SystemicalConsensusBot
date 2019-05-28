@@ -8,8 +8,6 @@ namespace SystemicalConsensusBot
 {
     class ConversationState
     {
-        public int UserId { get; }
-
         public string Topic { get { return this.InternalTopic; } set { this.InternalTopic = value; LastChanged = DateTime.Now; } }
         private string InternalTopic;
         public List<string> Answers = new List<string>();
@@ -18,16 +16,10 @@ namespace SystemicalConsensusBot
         private InteractionStates InternalInteractionState;
         public DateTime LastChanged { get; set; } = DateTime.Now;
 
-        public ConversationState(int userId)
-        {
-            this.UserId = userId;
-        }
         public enum InteractionStates
         {
-            notstarted,
-            started,
-            parametersSend,
-            finished
+            TopicAsked,
+            AnswerAsked
         }
     }
 }
