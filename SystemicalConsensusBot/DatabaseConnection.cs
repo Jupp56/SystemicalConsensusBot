@@ -47,7 +47,7 @@ namespace SystemicalConsensusBot
             lock (FilePath)
             {
                 var dict = GetDict();
-                if (poll.PollID == -1)
+                if (poll.PollId == -1)
                 {
                     long longRand;
                     do
@@ -56,23 +56,12 @@ namespace SystemicalConsensusBot
                         random.NextBytes(buf);
                         longRand = BitConverter.ToInt64(buf, 0);
                     } while (longRand < 0 || dict.ContainsKey(longRand));
-                    poll.PollID = longRand;
+                    poll.PollId = longRand;
                 }
-                dict[poll.PollID] = poll;
+                dict[poll.PollId] = poll;
                 SetDict(dict);
             }
             return poll;
-        }
-
-        public void DeletePoll(Poll poll)
-        {
-            lock (FilePath)
-            {
-                if (poll.PollID == -1) return;
-                var dict = GetDict();
-                dict.Remove(poll.PollID);
-                SetDict(dict);
-            }
         }
     }
 }

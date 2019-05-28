@@ -12,7 +12,7 @@ namespace SystemicalConsensusBot
     public class Poll
     {
         [JsonProperty]
-        public long PollID { get; internal set; } = -1;
+        public long PollId { get; internal set; } = -1;
         [JsonProperty]
         public int OwnerId { get; }
         [JsonProperty]
@@ -26,9 +26,9 @@ namespace SystemicalConsensusBot
 
 #pragma warning disable IDE0051
         [JsonConstructor]
-        private Poll(long pollID, int ownerId, bool isLocked, string[] answers, Dictionary<int, int[]> participantVotes, string topic)
+        private Poll(long pollId, int ownerId, bool isLocked, string[] answers, Dictionary<int, int[]> participantVotes, string topic)
         {
-            PollID = pollID;
+            PollId = pollId;
             OwnerId = ownerId;
             IsLocked = isLocked;
             Answers = answers;
@@ -79,14 +79,14 @@ namespace SystemicalConsensusBot
             foreach (var answer in Answers)
             {
                 InlineKeyboardButton[] row = new InlineKeyboardButton[3];
-                row[0] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:-", Text = "-" };
-                row[1] = new InlineKeyboardButton { CallbackData = $"showone:{PollID}:{counter}", Text = $"{counter}." };
-                row[2] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:+", Text = "+" };
+                row[0] = new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:-", Text = "-" };
+                row[1] = new InlineKeyboardButton { CallbackData = $"showone:{PollId}:{counter}", Text = $"{counter}." };
+                row[2] = new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:+", Text = "+" };
                 rows.Add(row);
                 counter++;
             }
-            InlineKeyboardButton[] lastRow = { new InlineKeyboardButton { CallbackData = $"show:{PollID}", Text = "Show my votes" },
-                new InlineKeyboardButton { CallbackData = $"close:{PollID}", Text = "Close poll" } };
+            InlineKeyboardButton[] lastRow = { new InlineKeyboardButton { CallbackData = $"show:{PollId}", Text = "Show my votes" },
+                new InlineKeyboardButton { CallbackData = $"close:{PollId}", Text = "Close poll" } };
             rows.Add(lastRow);
             InlineKeyboardButton[] lastlastRow = { new InlineKeyboardButton { Url = Program.HelpLink, Text = "Help" } };
             rows.Add(lastlastRow);
