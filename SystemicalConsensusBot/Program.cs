@@ -42,14 +42,17 @@ namespace SystemicalConsensusBot
 
         private static TelegramBotClient Bot;
         private const long devChatId = -1001070844778;
+        private static string Username;
+        public static string HelpLink => $"https://telegram.me/{Username}?start=help";
 
-        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
+        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));        
 
         private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
         static void Main()
         {
             Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
             Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
+            Username = Bot.GetMeAsync().Result.Username;
 
             var result = Bot.GetUpdatesAsync(-1, 1).Result;
             if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
