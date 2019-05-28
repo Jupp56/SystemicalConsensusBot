@@ -63,7 +63,8 @@ namespace SystemicalConsensusBot
                 double[] results = ComputeResult();
                 for (int i = 0; i < Answers.Length; i++)
                 {
-                    message += $"\n{i}. {Answers[i]}: {results[i]:N2}";
+                    bool winner = Answers.OrderBy(x => x).FirstOrDefault() == Answers[i];
+                    message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
                 }
 
                 return message;
