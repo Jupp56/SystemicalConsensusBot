@@ -197,8 +197,8 @@ namespace SystemicalConsensusBot
                 {
                     var cost = (target[j - 1] == source[i - 1] ? 0 : 1);
                     distance[currentRow, j] = Math.Min(Math.Min(
-                                distance[previousRow, j] + 10,
-                                distance[currentRow, j - 1] + 10),
+                                distance[previousRow, j] + 100,
+                                distance[currentRow, j - 1] + 100),
                                 distance[previousRow, j - 1] + cost);
                 }
             }
