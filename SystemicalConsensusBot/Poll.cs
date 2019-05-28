@@ -136,6 +136,8 @@ namespace SystemicalConsensusBot
                 if (!ParticipantVotes.ContainsKey(userID)) ParticipantVotes[userID] = new int[Answers.Length];
                 ParticipantVotes[userID][answerId] += change;
                 newValue = ParticipantVotes[userID][answerId];
+                if (newValue < 0) newValue = ParticipantVotes[userID][answerId] = 0;
+                if (newValue > 10) newValue = ParticipantVotes[userID][answerId] = 10;
                 return true;
             }
             else
