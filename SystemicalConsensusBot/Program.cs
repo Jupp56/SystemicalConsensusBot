@@ -71,21 +71,12 @@ namespace SystemicalConsensusBot
         {
             poll.Lock();
 
-            double[] pollResults = poll.GetPollResults();
-            string[] pollAnswers = poll.Answers;
-            string pollResultString = "";
-
-            for (int i = 0; i < poll.Answers.Length; i++)
-            {
-                pollResultString += $"\n{i}. {pollAnswers[i]}: {pollResults[i]}";
-            }
-
             databaseConnection.SavePoll(poll);
             Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
 
             Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
 
-            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: pollResultString);
+            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), parseMode: ParseMode.Html);
         }
 
         #region BotEventHandlers

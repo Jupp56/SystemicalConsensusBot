@@ -46,13 +46,28 @@ namespace SystemicalConsensusBot
 
         public string GetPollMessage()
         {
-            string message = $"Poll:\n<b>{Topic}</b>\n\nYou can answer:\n\n";
-            for(int i = 0; i<Answers.Length; i++)
+            if (!IsLocked)
             {
-                message += $"\n{i}: {Answers[i]}";
-            }
+                string message = $"Poll:\n<b>{Topic}</b>\n\nYou can answer:\n\n";
+                for (int i = 0; i < Answers.Length; i++)
+                {
+                    message += $"\n{i}: {Answers[i]}";
+                }
 
-            return message;
+                return message;
+            }
+            else
+            {
+                string message = $"Poll:\n<b>{Topic}</b>\n\nResults are:\n\n";
+
+                double[] results = ComputeResult();
+                for (int i = 0; i < Answers.Length; i++)
+                {
+                    message += $"\n{i}. {Answers[i]}: {results[i]}";
+                }
+
+                return message;
+            }
         }
 
         public InlineKeyboardMarkup GetInlineKeyboardMarkup()
@@ -89,7 +104,7 @@ namespace SystemicalConsensusBot
 
                 }
 
-                results.Add(result / Answers.Count());
+                results.Add(result / ParticipantVotes.Count);
             }
 
             return results.ToArray();
