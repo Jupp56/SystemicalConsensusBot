@@ -152,7 +152,7 @@ namespace SystemicalConsensusBot
             List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
             if (polls.Count < 1)
             {
-                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
+                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
                 return;
             }
             polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
@@ -162,7 +162,7 @@ namespace SystemicalConsensusBot
                 var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
                 results.Add(result);
             }
-            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
+            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
         }
 
         private static double ModifiedLevenshteinDistance(string source, string target)
