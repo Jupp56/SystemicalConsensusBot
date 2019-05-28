@@ -154,37 +154,42 @@ namespace SystemicalConsensusBot
 
         private static void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs e)
         {
-            int UserId = e.CallbackQuery.From.Id;
-            string[] data = e.CallbackQuery.Data.Split(':');
+            try
+            {
+                int UserId = e.CallbackQuery.From.Id;
+                string[] data = e.CallbackQuery.Data.Split(':');
 
-            if (!(data is null) && data[0] != null) switch (data[0])
+                if (!(data is null) && data[0] != null)
                 {
-                    case "vote":
-                       
-                        long pollId = Convert.ToInt64(data[1]);
-                        int userId = e.CallbackQuery.From.Id;
-                        int answerIndex = Convert.ToInt32(data[2]);
-                        int newValue = 0;
-                        int changeValueBy = 0;
-                        if (data[3] == "+") changeValueBy = 1;
-                        else changeValueBy = -1;
+                    switch (data[0])
+                    {
+                        case "vote":
 
-                        bool result = false;
-                        try
-                        {
+                            long pollId = Convert.ToInt64(data[1]);
+                            int userId = e.CallbackQuery.From.Id;
+                            int answerIndex = Convert.ToInt32(data[2]);
+                            int newValue = 0;
+
+                            int changeValueBy = data[3] == "+" ? 1 : -1;
+
                             Poll poll = databaseConnection.GetPoll(pollId);
-                            result = poll.Vote(userId, answerIndex, changeValueBy, out newValue);
-                            if (result) Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
-                        }
-                        catch
-                        {
-                            result = false;
-                        }
-                        if (!result) Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. Most probably the Poll is not active anymore.");
-                        break;
+
+                            bool result = poll.Vote(userId, answerIndex, changeValueBy, out newValue);
+                            if (result)
+                            {
+                                databaseConnection.SavePoll(poll);
+                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
+                            }
+                            else Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. Most probably the Poll is not active anymore.");
+                            break;
+                    }
                 }
 
-            
+            }
+            catch (Exception ex)
+            {
+                Send(devChatId, ex.ToString());
+            }
         }
 
         #endregion

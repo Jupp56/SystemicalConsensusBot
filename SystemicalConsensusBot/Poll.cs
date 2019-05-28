@@ -109,6 +109,7 @@ namespace SystemicalConsensusBot
         {
             if (!IsLocked)
             {
+                if (!ParticipantVotes.ContainsKey(userID)) ParticipantVotes[userID] = new int[Answers.Length];
                 ParticipantVotes[userID][answerId] += change;
                 newValue = ParticipantVotes[userID][answerId];
                 return true;
