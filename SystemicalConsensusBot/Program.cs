@@ -14,6 +14,32 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
+        private const string about = ("<b>About this Bot</b>\n" +
+                            "\n" +
+                            "This is the systemic consensing Bot.\n" +
+                            "\n" +
+                            "<i>What is systemic consensing?</i>\n" +
+                            "Systemic consensing is a way to vote. However, instead of voting for one specific option, every participant assignes a personal resistance value to every option. In the end, the option with the lowest resistance value wins.\n" +
+                            "\n" +
+                            "<i>Why should I let people vote with this system?</i>\n" +
+                            "This system reduces stress, as it does not return the best option for only some people, but the most acceptable option for as many participants as possible. Fewer people are unhappy with the end result.\n" +
+                            "\n");
+        private const string help = (
+                            "<i>How does this Bot work?</i>\n" +
+                            "\n" +
+                            "Create a new poll\n" +
+                            "Type /start and follow the instructions provided to create a new poll.\n" +
+                            "\n" +
+                            "Share the poll\n" +
+                            $"After pressing \"Share\", you can choose a chat to post the poll into. In any chat, you also can type @{Username}. It then shows your polls. To post it, click on the desired poll.\n" +
+                            $"\n" +
+                            $"Vote\n" +
+                            $"\n" +
+                            $"Increment or decrement the value by pressing + or - on the desired option. Clicking on the option number shows the current value, \"Show all\" shows all of them.\n" +
+                            $"The owner (and only he) can close the vote. Then the results are shown.\n" +
+                            $"\nFor further information, send /about");
+
+
         private static TelegramBotClient Bot;
         private const long devChatId = -1001070844778;
 
@@ -89,6 +115,16 @@ namespace SystemicalConsensusBot
 
                 if (e.Message.Entities?.Length > 0 && e.Message.Entities[0].Type == MessageEntityType.BotCommand)
                 {
+                    if (e.Message.Text == "/start help")
+                    {
+                        Send(UserId, help);
+                        return;
+                    }
+                    else if(e.Message.Text == "/about")
+                    {
+                        Send(UserId, about);
+                        return;
+                    }
                     if (!ConversationStates.ContainsKey(UserId))
                     {
                         WelcomeUser(UserId);
@@ -220,6 +256,7 @@ namespace SystemicalConsensusBot
                             Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
                             break;
 
+
                         case "vote":
                             {
                                 long pollId = Convert.ToInt64(data[1]);
@@ -268,7 +305,7 @@ namespace SystemicalConsensusBot
                                 break;
                             }
                         case "close":
-                     
+
                             {
 
                                 long pollId = Convert.ToInt64(data[1]);
@@ -291,10 +328,6 @@ namespace SystemicalConsensusBot
             }
         }
 
-        
-
         #endregion
-
-
     }
 }
