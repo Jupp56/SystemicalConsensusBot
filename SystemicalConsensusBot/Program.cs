@@ -14,6 +14,7 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
+        #region help and descripion
         private const string About = ("<b>About this Bot</b>\n" +
                             "\n" +
                             "This is the systemic consensing Bot.\n" +
@@ -39,7 +40,7 @@ namespace SystemicalConsensusBot
                             $"Increment or decrement the value by pressing + or - on the desired option. Clicking on the option number shows the current value, \"Show all\" shows all of them.\n" +
                             $"The owner (and only he) can close the vote. Then the results are shown.\n" +
                             $"\nFor further information, send /about";
-
+        #endregion
 
         private static TelegramBotClient Bot;
         private const long devChatId = -1001070844778;
@@ -49,6 +50,7 @@ namespace SystemicalConsensusBot
         private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));        
 
         private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
+
         static void Main()
         {
             Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
@@ -61,8 +63,7 @@ namespace SystemicalConsensusBot
             Bot.OnMessage += BotOnMessageReceived;
             Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
             Bot.OnInlineQuery += BotOnInlineQueryReceived;
-            Bot.OnInlineResultChosen += BotOnChosenInlineResultReceived;
-            //Bot.OnReceiveError += BotOnReceiveError;
+            Bot.OnReceiveError += BotOnReceiveError;
 
             Bot.StartReceiving(Array.Empty<UpdateType>());
             Console.WriteLine($"Start listening");
@@ -92,10 +93,12 @@ namespace SystemicalConsensusBot
         }
         #endregion
 
+        #region helpers
         public static void Send(long chatId, string message, IReplyMarkup markup = null)
         {
             Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, replyMarkup: markup);
         }
+        #endregion
 
         private static void ClosePoll(CallbackQueryEventArgs e, Poll poll)
         {
@@ -143,6 +146,7 @@ namespace SystemicalConsensusBot
                             return;
                     }
                 }
+
                 if (ConversationStates.ContainsKey(UserId))
                 {
                     var state = ConversationStates[UserId];
@@ -178,11 +182,6 @@ namespace SystemicalConsensusBot
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
         {
             Send(devChatId, e.ApiRequestException.ToString());
-        }
-
-        private static void BotOnChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
-        {
-            //throw new NotImplementedException();
         }
 
         private static void BotOnInlineQueryReceived(object sender, InlineQueryEventArgs e)
@@ -224,6 +223,7 @@ namespace SystemicalConsensusBot
             var m = target.Length;
             var n = source.Length;
             var distance = new double[2, m + 1];
+
             // Initialize the distance matrix
             for (var j = 1; j <= m; j++) distance[0, j] = j;
 
