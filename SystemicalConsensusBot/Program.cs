@@ -164,7 +164,7 @@ namespace SystemicalConsensusBot
                 Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
                 return;
             }
-            polls = polls.OrderBy(x => LevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
+            polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
             foreach (var poll in polls)
             {
                 var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
@@ -174,8 +174,7 @@ namespace SystemicalConsensusBot
             Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
         }
 
-        // This is just copypasta because I was too lazy to write it again
-        private static int LevenshteinDistance(string source, string target)
+        private static int ModifiedLevenshteinDistance(string source, string target)
         {
             if (string.IsNullOrEmpty(source))
             {
@@ -207,8 +206,8 @@ namespace SystemicalConsensusBot
                 {
                     var cost = (target[j - 1] == source[i - 1] ? 0 : 1);
                     distance[currentRow, j] = Math.Min(Math.Min(
-                                distance[previousRow, j] + 1,
-                                distance[currentRow, j - 1] + 1),
+                                distance[previousRow, j] + 10,
+                                distance[currentRow, j - 1] + 10),
                                 distance[previousRow, j - 1] + cost);
                 }
             }
