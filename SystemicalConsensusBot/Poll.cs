@@ -39,7 +39,13 @@ namespace SystemicalConsensusBot
 
         public string GetPollMessage()
         {
-            return $"";
+            string message = $"Poll:\n<b>{Topic}</b>\n\nYou can answer:\n\n";
+            for(int i = 0; i<Answers.Length; i++)
+            {
+                message += $"\n{i}: {Answers[i]}";
+            }
+
+            return message;
         }
 
         public InlineKeyboardMarkup GetInlineKeyboardMarkup()

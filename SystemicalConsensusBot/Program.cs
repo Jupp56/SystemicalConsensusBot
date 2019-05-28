@@ -65,7 +65,7 @@ namespace SystemicalConsensusBot
 
         public static void Send(long chatId, string message)
         {
-            Bot.SendTextMessageAsync(chatId, message);
+            Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html);
         }
 
         #region BotEventHandlers
