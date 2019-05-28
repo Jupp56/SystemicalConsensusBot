@@ -159,7 +159,7 @@ namespace SystemicalConsensusBot
             foreach (var poll in polls)
             {
                 var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
-                var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic, content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+                var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
                 results.Add(result);
             }
             Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
