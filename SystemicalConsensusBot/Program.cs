@@ -16,10 +16,10 @@ namespace SystemicalConsensusBot
     {
         private static TelegramBotClient Bot;
         
-        private static DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
+        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
 
         private static List<ConversationState> ConversationStates { get; set; } = new List<ConversationState>();
-        static void Main(string[] args)
+        static void Main()
         {
             Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
             Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
@@ -42,7 +42,7 @@ namespace SystemicalConsensusBot
         #region userInteraction
         public static void WelcomeUser(int UserId)
         {
-            send(UserId, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"\nTo save the poll, use \"/save\"");
+            Send(UserId, "Welcome to Systemical_Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please at first choose the desired topic of your poll with \"/topic <topic>\".\n To add answers, send \"/answer <answer>\"\nTo save the poll, use \"/save\"");
 
             if (ConversationStates.Exists(x => x.UserId == UserId))
             {
@@ -62,7 +62,7 @@ namespace SystemicalConsensusBot
         }
         #endregion
 
-        public static void send(int userId, string message)
+        public static void Send(int userId, string message)
         {
             Bot.SendTextMessageAsync(userId, message);
         }
@@ -92,12 +92,12 @@ namespace SystemicalConsensusBot
                         {
                             string topic = e.Message.Text.Split(' ')[1];
                             ConversationStates.Find(x => x.UserId == UserId).Topic = topic;
-                            send(UserId, "Set topic to: " + topic);
+                            Send(UserId, "Set topic to: " + topic);
                             break;
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            send(UserId, "No topic provided!");
+                            Send(UserId, "No topic provided!");
                             break;
                         }
 
@@ -107,12 +107,12 @@ namespace SystemicalConsensusBot
                         {
                             string answerToAdd = e.Message.Text.Split(' ')[1];
                             ConversationStates.Find(x => x.UserId == UserId).Answers.Add(answerToAdd);
-                            send(UserId, "Added answer: " + answerToAdd);
+                            Send(UserId, "Added answer: " + answerToAdd);
                             break;
                         }
                         catch
                         {
-                            send(UserId, "No answer provided!");
+                            Send(UserId, "No answer provided!");
                             break;
 
                         }
@@ -127,7 +127,7 @@ namespace SystemicalConsensusBot
                         }
                         else
                         {
-                            send(UserId, "Topic or Answers not set");
+                            Send(UserId, "Topic or Answers not set");
                         }
 
                         break;

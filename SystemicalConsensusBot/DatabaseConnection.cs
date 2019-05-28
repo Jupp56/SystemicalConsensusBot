@@ -12,7 +12,9 @@ namespace SystemicalConsensusBot
     public class DatabaseConnection : IDatabaseConnection
     {
         private readonly string FilePath;
+#pragma warning disable 0649
         private static readonly object Lock;
+#pragma warning restore 0649
         private static readonly Random random = new Random();
         public DatabaseConnection(string databaseFilePath)
         {
