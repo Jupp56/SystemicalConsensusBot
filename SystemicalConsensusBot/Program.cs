@@ -156,32 +156,69 @@ namespace SystemicalConsensusBot
         {
             try
             {
-                int UserId = e.CallbackQuery.From.Id;
+                int userId = e.CallbackQuery.From.Id;
                 string[] data = e.CallbackQuery.Data.Split(':');
 
                 if (!(data is null) && data[0] != null)
                 {
                     switch (data[0])
                     {
-                        case "vote":
-
-                            long pollId = Convert.ToInt64(data[1]);
-                            int userId = e.CallbackQuery.From.Id;
-                            int answerIndex = Convert.ToInt32(data[2]);
-                            int newValue = 0;
-
-                            int changeValueBy = data[3] == "+" ? 1 : -1;
-
-                            Poll poll = databaseConnection.GetPoll(pollId);
-
-                            bool result = poll.Vote(userId, answerIndex, changeValueBy, out newValue);
-                            if (result)
-                            {
-                                databaseConnection.SavePoll(poll);
-                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
-                            }
-                            else Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. Most probably the Poll is not active anymore.");
+                        case "null":
+                            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
                             break;
+
+                        case "vote":
+                            {
+                                long pollId = Convert.ToInt64(data[1]);
+                                int answerIndex = Convert.ToInt32(data[2]);
+
+                                int changeValueBy = data[3] == "+" ? 1 : -1;
+
+                                Poll poll = databaseConnection.GetPoll(pollId);
+
+                                bool result = poll.Vote(userId, answerIndex, changeValueBy, out int newValue);
+                                if (result)
+                                {
+                                    databaseConnection.SavePoll(poll);
+                                    Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
+                                }
+                                else
+                                {
+                                    Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. This Poll is not active anymore.");
+                                    ClosePoll(e, poll);
+                                }
+                                break;
+                            }
+
+                        case "show":
+                            {
+                                string results = "Your current votes: \n";
+                                long pollId = Convert.ToInt64(data[1]);
+                                Poll poll = databaseConnection.GetPoll(pollId);
+                                string[] answers = poll.Answers;
+                                int[] userChoices = poll.GetUserVotes(userId);
+                                for (int i = 0; i < poll.Answers.Length; i++)
+                                {
+                                    results += $"\n{i}. {answers[i]}: {userChoices[i]}";
+                                }
+
+                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: results, showAlert: true);
+                            }
+                            break;
+                        case "close":
+                     
+                            {
+
+                                long pollId = Convert.ToInt64(data[1]);
+                                Poll poll = databaseConnection.GetPoll(pollId);
+                                if (userId == poll.OwnerId)
+                                {
+                                    ClosePoll(e, poll);
+                                }
+                                break;
+                            }
+
+
                     }
                 }
 
@@ -190,6 +227,27 @@ namespace SystemicalConsensusBot
             {
                 Send(devChatId, ex.ToString());
             }
+        }
+
+        private static void ClosePoll(CallbackQueryEventArgs e, Poll poll)
+        {
+            poll.Lock();
+
+            double[] pollResults = poll.GetPollResults();
+            string[] pollAnswers = poll.Answers;
+            string pollResultString = "";
+
+            for (int i = 0; i < poll.Answers.Length; i++)
+            {
+                pollResultString += $"\n{i}. {pollAnswers[i]}: {pollResults[i]}";
+            }
+
+            databaseConnection.SavePoll(poll);
+            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+
+            Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
+
+            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: pollResultString);
         }
 
         #endregion

@@ -100,6 +100,11 @@ namespace SystemicalConsensusBot
             return ComputeResult();
         }
 
+        public int[] GetUserVotes(int userId)
+        {
+            return ParticipantVotes[userId];
+        }
+        
         public void Lock()
         {
             IsLocked = true;
