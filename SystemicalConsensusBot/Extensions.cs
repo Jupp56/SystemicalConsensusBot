@@ -8,6 +8,7 @@ namespace SystemicalConsensusBot
 {
     public static class Extensions
     {
-        public static string Escape(this string str) => str.Replace("<", "&lt;").Replace(">", "&gt;");
+        public static string Escape(this string str) => str.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+        public static string Unescape(this string str) => str.Replace("$gt;", ">").Replace("&lt;", "<").Replace("$amp;", "&");
     }
 }

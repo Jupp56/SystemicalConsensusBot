@@ -152,20 +152,20 @@ namespace SystemicalConsensusBot
             List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
             if (polls.Count < 1)
             {
-                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
+                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
                 return;
             }
             polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
             foreach (var poll in polls)
             {
                 var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
-                var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic, content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+                var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
                 results.Add(result);
             }
-            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
+            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
         }
 
-        private static int ModifiedLevenshteinDistance(string source, string target)
+        private static double ModifiedLevenshteinDistance(string source, string target)
         {
             if (string.IsNullOrEmpty(source))
             {
@@ -183,7 +183,7 @@ namespace SystemicalConsensusBot
 
             var m = target.Length;
             var n = source.Length;
-            var distance = new int[2, m + 1];
+            var distance = new double[2, m + 1];
             // Initialize the distance matrix
             for (var j = 1; j <= m; j++) distance[0, j] = j;
 
@@ -197,8 +197,8 @@ namespace SystemicalConsensusBot
                 {
                     var cost = (target[j - 1] == source[i - 1] ? 0 : 1);
                     distance[currentRow, j] = Math.Min(Math.Min(
-                                distance[previousRow, j] + 10,
-                                distance[currentRow, j - 1] + 10),
+                                distance[previousRow, j] + 0.1,
+                                distance[currentRow, j - 1] + 0.1),
                                 distance[previousRow, j - 1] + cost);
                 }
             }
