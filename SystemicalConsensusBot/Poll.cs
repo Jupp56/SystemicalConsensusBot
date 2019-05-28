@@ -16,8 +16,6 @@ namespace SystemicalConsensusBot
         [JsonProperty]
         public int OwnerId { get; }
         [JsonProperty]
-        public int AnswerCount { get; }
-        [JsonProperty]
         public bool IsLocked { get; private set; }
         [JsonProperty]
         public string[] Answers { get; }
@@ -26,14 +24,23 @@ namespace SystemicalConsensusBot
         [JsonProperty]
         public string Topic { get; }
 
+#pragma warning disable IDE0051
         [JsonConstructor]
-        private Poll() { }
+        private Poll(long pollID, int ownerId, bool isLocked, string[] answers, Dictionary<int, int[]> participantVotes, string topic)
+        {
+            PollID = pollID;
+            OwnerId = ownerId;
+            IsLocked = isLocked;
+            Answers = answers;
+            ParticipantVotes = participantVotes;
+            Topic = topic;
+        }
+#pragma warning restore IDE0051
 
-        public Poll(string topic, int ownerId, int answerCount, string[] answers)
+        public Poll(string topic, int ownerId, string[] answers)
         {
             this.Topic = topic;
             this.OwnerId = ownerId;
-            this.AnswerCount = answerCount;
             this.Answers = answers;
         }
 
@@ -72,7 +79,7 @@ namespace SystemicalConsensusBot
         {
             List<double> results = new List<double>();
 
-            for (int i = 0; i < AnswerCount; i++)
+            for (int i = 0; i < Answers.Count(); i++)
             {
                 double result = 0;
 
@@ -82,7 +89,7 @@ namespace SystemicalConsensusBot
 
                 }
 
-                results.Add(result / AnswerCount);
+                results.Add(result / Answers.Count());
             }
 
             return results.ToArray();
@@ -98,15 +105,17 @@ namespace SystemicalConsensusBot
             IsLocked = true;
         }
 
-        public bool Vote(int userID, int answerId, int change)
+        public bool Vote(int userID, int answerId, int change, out int newValue)
         {
             if (!IsLocked)
             {
                 ParticipantVotes[userID][answerId] += change;
+                newValue = ParticipantVotes[userID][answerId];
                 return true;
             }
             else
             {
+                newValue = -1;
                 return false;
             }
             
