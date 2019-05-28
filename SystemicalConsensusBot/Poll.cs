@@ -50,7 +50,22 @@ namespace SystemicalConsensusBot
 
         public InlineKeyboardMarkup GetInlineKeyboardMarkup()
         {
-            return null;
+            if (IsLocked) return null;
+            List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
+            int counter = 0;
+            foreach (var answer in Answers)
+            {
+                InlineKeyboardButton[] row = new InlineKeyboardButton[3];
+                row[0] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:-", Text = "-" };
+                row[1] = new InlineKeyboardButton { CallbackData = "null", Text = $"{counter}." };
+                row[2] = new InlineKeyboardButton { CallbackData = $"vote:{PollID}:{counter}:+", Text = "+" };
+                rows.Add(row);
+                counter++;
+            }
+            InlineKeyboardButton[] lastRow = { new InlineKeyboardButton { CallbackData = $"show:{PollID}", Text = "Show my votes" },
+                new InlineKeyboardButton { CallbackData = $"close:{PollID}", Text = "Close poll" } };
+            rows.Add(lastRow);
+            return new InlineKeyboardMarkup(rows.ToArray());
         }
 
         private double[] ComputeResult()
