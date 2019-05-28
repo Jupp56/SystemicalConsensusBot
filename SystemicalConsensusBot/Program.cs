@@ -130,12 +130,24 @@ namespace SystemicalConsensusBot
 
         private static void BotOnChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         private static void BotOnInlineQueryReceived(object sender, InlineQueryEventArgs e)
         {
-            throw new NotImplementedException();
+            var userId = e.InlineQuery.From.Id;
+            var polls = databaseConnection.GetPollsByOwner(userId);
+            List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
+            if (polls.Count < 1)
+            {
+                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
+                return;
+            }
+            foreach (var poll in polls)
+            {
+                var content = new InputTextMessageContent(poll.GetPollMessage());
+                var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic, content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+            }
         }
 
         private static void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs e)
