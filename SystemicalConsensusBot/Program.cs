@@ -15,7 +15,8 @@ namespace SystemicalConsensusBot
     class Program
     {
         private static TelegramBotClient Bot;
-        
+        private const long devChatId = -1001070844778;
+
         private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
 
         private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
@@ -42,7 +43,7 @@ namespace SystemicalConsensusBot
         #region userInteraction
         public static void WelcomeUser(int UserId)
         {
-            Send(UserId, "Welcome to Systemical Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please send me the topic for you poll.");
+            Send(UserId, "Welcome to Systemical Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please send me the topic for your poll.");
 
             if (ConversationStates.ContainsKey(UserId))
             {
@@ -62,63 +63,70 @@ namespace SystemicalConsensusBot
         }
         #endregion
 
-        public static void Send(int userId, string message)
+        public static void Send(long chatId, string message)
         {
-            Bot.SendTextMessageAsync(userId, message);
+            Bot.SendTextMessageAsync(chatId, message);
         }
 
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
-            if (e.Message.Chat.Type != ChatType.Private) return;
-            int UserId = e.Message.From.Id;
-
-            if (e.Message.Entities?.Length > 0 && e.Message.Entities[0].Type == MessageEntityType.BotCommand)
+            try
             {
-                if (!ConversationStates.ContainsKey(UserId))
+                if (e.Message.Chat.Type != ChatType.Private) return;
+                int UserId = e.Message.From.Id;
+
+                if (e.Message.Entities?.Length > 0 && e.Message.Entities[0].Type == MessageEntityType.BotCommand)
                 {
-                    WelcomeUser(UserId);
-                    return;
-                }
-                switch (e.Message.EntityValues.ElementAt(0))
-                {
-                    case "/cancel":
-                    case "/stop":
-                        RemoveUser(UserId);
-                        Send(UserId, "Canceled whatever I was doing just now.");
+                    if (!ConversationStates.ContainsKey(UserId))
+                    {
+                        WelcomeUser(UserId);
                         return;
+                    }
+                    switch (e.Message.EntityValues.ElementAt(0))
+                    {
+                        case "/cancel":
+                        case "/stop":
+                            RemoveUser(UserId);
+                            Send(UserId, "Canceled whatever I was doing just now.");
+                            return;
+                    }
+                }
+                if (ConversationStates.ContainsKey(UserId))
+                {
+                    var state = ConversationStates[UserId];
+                    switch (state.InteractionState)
+                    {
+                        case ConversationState.InteractionStates.TopicAsked:
+                            state.Topic = e.Message.Text;
+                            Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
+                            state.InteractionState = ConversationState.InteractionStates.AnswerAsked;
+                            break;
+                        case ConversationState.InteractionStates.AnswerAsked:
+                            if (e.Message.Text == "/done" || e.Message.Text == "/save")
+                            {
+                                databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.Count, state.Answers.ToArray()));
+                                Send(UserId, "Poll was saved successfully!");   //TODO send and share poll, inline keyboard
+                                RemoveUser(UserId);
+                            }
+                            else
+                            {
+                                state.Answers.Add(e.Message.Text);
+                                Send(UserId, $"Added answer \"{e.Message.Text}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
+                            }
+                            break;
+                    }
                 }
             }
-            if (ConversationStates.ContainsKey(UserId))
+            catch (Exception ex)
             {
-                var state = ConversationStates[UserId];
-                switch (state.InteractionState)
-                {
-                    case ConversationState.InteractionStates.TopicAsked:
-                        state.Topic = e.Message.Text;
-                        Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
-                        state.InteractionState = ConversationState.InteractionStates.AnswerAsked;
-                        break;
-                    case ConversationState.InteractionStates.AnswerAsked:
-                        if (e.Message.Text == "/done" || e.Message.Text == "/save")
-                        {
-                            databaseConnection.SavePoll(new Poll(UserId, state.Answers.Count, state.Answers.ToArray()));
-                            Send(UserId, "Poll was saved successfully!");   //TODO send and share poll, inline keyboard
-                            RemoveUser(UserId);
-                        }
-                        else
-                        {
-                            state.Answers.Add(e.Message.Text);
-                            Send(UserId, $"Added answer \"{e.Message.Text}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
-                        }
-                        break;
-                }
+                Send(devChatId, ex.ToString());
             }
         }
 
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
         {
-            throw new NotImplementedException();
+            Send(devChatId, e.ApiRequestException.ToString());
         }
 
         private static void BotOnChosenInlineResultReceived(object sender, ChosenInlineResultEventArgs e)

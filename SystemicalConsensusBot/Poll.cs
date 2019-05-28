@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace SystemicalConsensusBot
 {
@@ -22,15 +23,28 @@ namespace SystemicalConsensusBot
         public string[] Answers { get; }
         [JsonProperty]
         private Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
+        [JsonProperty]
+        public string Topic { get; }
 
         [JsonConstructor]
         private Poll() { }
 
-        public Poll(int ownerId, int answerCount, string[] answers)
+        public Poll(string topic, int ownerId, int answerCount, string[] answers)
         {
+            this.Topic = topic;
             this.OwnerId = ownerId;
             this.AnswerCount = answerCount;
             this.Answers = answers;
+        }
+
+        public string GetPollMessage()
+        {
+            return $"";
+        }
+
+        public InlineKeyboardMarkup GetInlineKeyboardMarkup()
+        {
+            return null;
         }
 
         private double[] ComputeResult()
