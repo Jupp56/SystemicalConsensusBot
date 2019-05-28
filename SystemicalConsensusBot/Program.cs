@@ -14,7 +14,7 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
-        private const string about = ("<b>About this Bot</b>\n" +
+        private const string About = ("<b>About this Bot</b>\n" +
                             "\n" +
                             "This is the systemic consensing Bot.\n" +
                             "\n" +
@@ -24,7 +24,8 @@ namespace SystemicalConsensusBot
                             "<i>Why should I let people vote with this system?</i>\n" +
                             "This system reduces stress, as it does not return the best option for only some people, but the most acceptable option for as many participants as possible. Fewer people are unhappy with the end result.\n" +
                             "\n");
-        private const string help = (
+
+        private static string Help => 
                             "<i>How does this Bot work?</i>\n" +
                             "\n" +
                             "Create a new poll\n" +
@@ -37,7 +38,7 @@ namespace SystemicalConsensusBot
                             $"\n" +
                             $"Increment or decrement the value by pressing + or - on the desired option. Clicking on the option number shows the current value, \"Show all\" shows all of them.\n" +
                             $"The owner (and only he) can close the vote. Then the results are shown.\n" +
-                            $"\nFor further information, send /about");
+                            $"\nFor further information, send /about";
 
 
         private static TelegramBotClient Bot;
@@ -120,12 +121,12 @@ namespace SystemicalConsensusBot
                 {
                     if (e.Message.Text == "/start help")
                     {
-                        Send(UserId, help);
+                        Send(UserId, Help);
                         return;
                     }
                     else if(e.Message.Text == "/about")
                     {
-                        Send(UserId, about);
+                        Send(UserId, About);
                         return;
                     }
                     if (!ConversationStates.ContainsKey(UserId))
