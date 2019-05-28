@@ -67,6 +67,27 @@ namespace SystemicalConsensusBot
             Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, replyMarkup: markup);
         }
 
+        private static void ClosePoll(CallbackQueryEventArgs e, Poll poll)
+        {
+            poll.Lock();
+
+            double[] pollResults = poll.GetPollResults();
+            string[] pollAnswers = poll.Answers;
+            string pollResultString = "";
+
+            for (int i = 0; i < poll.Answers.Length; i++)
+            {
+                pollResultString += $"\n{i}. {pollAnswers[i]}: {pollResults[i]}";
+            }
+
+            databaseConnection.SavePoll(poll);
+            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+
+            Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
+
+            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: pollResultString);
+        }
+
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
@@ -271,26 +292,7 @@ namespace SystemicalConsensusBot
             }
         }
 
-        private static void ClosePoll(CallbackQueryEventArgs e, Poll poll)
-        {
-            poll.Lock();
-
-            double[] pollResults = poll.GetPollResults();
-            string[] pollAnswers = poll.Answers;
-            string pollResultString = "";
-
-            for (int i = 0; i < poll.Answers.Length; i++)
-            {
-                pollResultString += $"\n{i}. {pollAnswers[i]}: {pollResults[i]}";
-            }
-
-            databaseConnection.SavePoll(poll);
-            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-
-            Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
-
-            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: pollResultString);
-        }
+        
 
         #endregion
 
