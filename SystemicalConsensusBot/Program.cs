@@ -62,9 +62,9 @@ namespace SystemicalConsensusBot
         }
         #endregion
 
-        public static void Send(long chatId, string message)
+        public static void Send(long chatId, string message, IReplyMarkup markup = null)
         {
-            Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html);
+            Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, replyMarkup: markup);
         }
 
         #region BotEventHandlers
@@ -105,7 +105,7 @@ namespace SystemicalConsensusBot
                             if (e.Message.Text == "/done" || e.Message.Text == "/save")
                             {
                                 databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.ToArray()));
-                                Send(UserId, "Poll was saved successfully!");   //TODO send and share poll, inline keyboard
+                                Send(UserId, "Poll was saved successfully!", new InlineKeyboardMarkup(new InlineKeyboardButton { SwitchInlineQuery = state.Topic, Text = "Share poll" }));
                                 RemoveUser(UserId);
                             }
                             else
