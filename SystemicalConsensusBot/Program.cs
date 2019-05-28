@@ -56,7 +56,6 @@ namespace SystemicalConsensusBot
             }
         }
 
-
         public static void RemoveUser(int UserId)
         {
             if (ConversationStates.ContainsKey(UserId)) ConversationStates.Remove(UserId);
@@ -141,7 +140,37 @@ namespace SystemicalConsensusBot
 
         private static void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs e)
         {
-            throw new NotImplementedException();
+            int UserId = e.CallbackQuery.From.Id;
+            string[] data = e.CallbackQuery.Data.Split(':');
+
+            if (!(data is null) && data[0] != null) switch (data[0])
+                {
+                    case "vote":
+                       
+                        long pollId = Convert.ToInt64(data[1]);
+                        int userId = e.CallbackQuery.From.Id;
+                        int answerIndex = Convert.ToInt32(data[2]);
+                        int newValue = 0;
+                        int changeValueBy = 0;
+                        if (data[3] == "+") changeValueBy = 1;
+                        else changeValueBy = -1;
+
+                        bool result = false;
+                        try
+                        {
+                            Poll poll = databaseConnection.GetPoll(pollId);
+                            result = poll.Vote(userId, answerIndex, changeValueBy, out newValue);
+                            if (result) Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
+                        }
+                        catch
+                        {
+                            result = false;
+                        }
+                        if (!result) Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. Most probably the Poll is not active anymore.");
+                        break;
+                }
+
+            
         }
 
         #endregion
