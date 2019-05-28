@@ -56,6 +56,7 @@ namespace SystemicalConsensusBot
                         random.NextBytes(buf);
                         longRand = BitConverter.ToInt64(buf, 0);
                     } while (longRand < 0 || dict.ContainsKey(longRand));
+                    poll.PollID = longRand;
                 }
                 dict[poll.PollID] = poll;
                 SetDict(dict);

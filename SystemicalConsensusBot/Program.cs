@@ -104,7 +104,7 @@ namespace SystemicalConsensusBot
                         case ConversationState.InteractionStates.AnswerAsked:
                             if (e.Message.Text == "/done" || e.Message.Text == "/save")
                             {
-                                databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.Count, state.Answers.ToArray()));
+                                databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.ToArray()));
                                 Send(UserId, "Poll was saved successfully!");   //TODO send and share poll, inline keyboard
                                 RemoveUser(UserId);
                             }
@@ -145,9 +145,11 @@ namespace SystemicalConsensusBot
             }
             foreach (var poll in polls)
             {
-                var content = new InputTextMessageContent(poll.GetPollMessage());
+                var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
                 var result = new InlineQueryResultArticle($"sendpoll:{poll.PollID}", poll.Topic, content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+                results.Add(result);
             }
+            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true);
         }
 
         private static void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs e)
