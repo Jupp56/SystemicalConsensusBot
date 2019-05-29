@@ -26,7 +26,7 @@ namespace SystemicalConsensusBot
                             "This system reduces stress, as it does not return the best option for only some people, but the most acceptable option for as many participants as possible. Fewer people are unhappy with the end result.\n" +
                             "\n");
 
-        private static string Help => 
+        private static string Help =>
                             "<i>How does this Bot work?</i>\n" +
                             "\n" +
                             "Create a new poll\n" +
@@ -47,28 +47,32 @@ namespace SystemicalConsensusBot
         private static string Username;
         public static string HelpLink => $"https://telegram.me/{Username}?start=help";
 
-        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));        
+        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
 
         private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
 
         static void Main()
         {
-            Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
-            Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
-            Username = Bot.GetMeAsync().Result.Username;
+            try
+            {
+                //Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
+                Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
+                Username = Bot.GetMeAsync().Result.Username;
 
-            var result = Bot.GetUpdatesAsync(-1, 1).Result;
-            if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
+                var result = Bot.GetUpdatesAsync(-1, 1).Result;
+                if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
 
-            Bot.OnMessage += BotOnMessageReceived;
-            Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
-            Bot.OnInlineQuery += BotOnInlineQueryReceived;
-            Bot.OnReceiveError += BotOnReceiveError;
+                Bot.OnMessage += BotOnMessageReceived;
+                Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
+                Bot.OnInlineQuery += BotOnInlineQueryReceived;
+                Bot.OnReceiveError += BotOnReceiveError;
 
-            Bot.StartReceiving(Array.Empty<UpdateType>());
-            Console.WriteLine($"Start listening");
-            Console.ReadLine();
-            Bot.StopReceiving();
+                Bot.StartReceiving(Array.Empty<UpdateType>());
+                Console.WriteLine($"Start listening");
+                Console.ReadLine();
+                Bot.StopReceiving();
+            }
+            catch (Exception ex) { Console.WriteLine(ex.StackTrace); }
         }
 
         #region userInteraction
@@ -112,6 +116,8 @@ namespace SystemicalConsensusBot
             Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), parseMode: ParseMode.Html);
         }
 
+
+
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
         {
@@ -127,10 +133,32 @@ namespace SystemicalConsensusBot
                         Send(UserId, Help);
                         return;
                     }
-                    else if(e.Message.Text == "/about")
+                    else if (e.Message.Text == "/about")
                     {
                         Send(UserId, About);
                         return;
+                    }
+                    else if (e.Message.Text == "/delete")
+                    {
+                        Send(UserId, "Choose the poll you want to delete:");
+                        List<Poll> pollsOfUser = databaseConnection.GetPollsByOwner(UserId);
+
+
+
+                        List<InlineKeyboardButton> rows = new List<InlineKeyboardButton>();
+                        foreach (Poll poll in pollsOfUser)
+                        {
+                            rows.Add(new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" });
+                        }
+
+                        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(rows);
+
+                        //List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
+                        //var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
+                        //var result = new InlineQueryResultArticle($"sendpoll:{poll.PollId}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+                        //results.Add(result);
+
+                        //Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
                     }
                     if (!ConversationStates.ContainsKey(UserId))
                     {

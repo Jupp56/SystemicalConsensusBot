@@ -58,12 +58,12 @@ namespace SystemicalConsensusBot
             }
             else
             {
-                string message = $"Poll:\n<b>{Topic}</b>\n\nResults are:\n\n";
+                string message = $"Poll:\n<b>{Topic}</b>\n\nResults are:\n";
 
                 double[] results = ComputeResult();
                 for (int i = 0; i < Answers.Length; i++)
                 {
-                    bool winner = Answers.OrderBy(x => x).FirstOrDefault() == Answers[i];
+                    bool winner = results.OrderBy(x => x).FirstOrDefault() == results[i];
                     message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
                 }
 
