@@ -133,38 +133,21 @@ namespace SystemicalConsensusBot
                         Send(UserId, Help);
                         return;
                     }
+
                     else if (e.Message.Text == "/about")
                     {
                         Send(UserId, About);
                         return;
                     }
+
                     else if (e.Message.Text == "/delete")
                     {
-                        Send(UserId, "Choose the poll you want to delete:");
-                        List<Poll> pollsOfUser = databaseConnection.GetPollsByOwner(UserId);
+                        InlineKeyboardMarkup markup = GetDeleteMarkup(UserId);
 
-
-
-                        List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
-                        foreach (Poll poll in pollsOfUser)
-                        {
-                            InlineKeyboardButton[] row = new InlineKeyboardButton[1];
-                            row[0] = new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" };
-                            rows.Add(row);
-                        }
-
-                        rows.Add(new InlineKeyboardButton[1] { new InlineKeyboardButton() { CallbackData = $"doneDelete", Text = $"Done" } } );
-                        InlineKeyboardMarkup markup = new InlineKeyboardMarkup(rows);
-
-                        //List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
-                        //var content = new InputTextMessageContent("TextmessageContent") { ParseMode = ParseMode.Html };
-                        //var result = new InlineQueryResultArticle($"deletearticle", "ResultTitle", content) { ReplyMarkup = markup };
-                        //results.Add(result);
-
-                        Bot.SendTextMessageAsync(UserId, "blah", replyMarkup: markup);
+                        Bot.SendTextMessageAsync(UserId, "Choose one or several polls to delete", replyMarkup: markup);
                         return;
-                        
                     }
+
                     if (!ConversationStates.ContainsKey(UserId))
                     {
                         WelcomeUser(UserId);
@@ -210,6 +193,24 @@ namespace SystemicalConsensusBot
             {
                 Send(devChatId, ex.ToString());
             }
+        }
+
+        private static InlineKeyboardMarkup GetDeleteMarkup(int UserId)
+        {
+            List<Poll> pollsOfUser = databaseConnection.GetPollsByOwner(UserId);
+
+            List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
+
+            foreach (Poll poll in pollsOfUser)
+            {
+                InlineKeyboardButton[] row = new InlineKeyboardButton[1];
+                row[0] = new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" };
+                rows.Add(row);
+            }
+
+            rows.Add(new InlineKeyboardButton[1] { new InlineKeyboardButton() { CallbackData = $"doneDelete", Text = $"Done" } });
+            InlineKeyboardMarkup markup = new InlineKeyboardMarkup(rows);
+            return markup;
         }
 
         private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
@@ -283,6 +284,7 @@ namespace SystemicalConsensusBot
             try
             {
                 int userId = e.CallbackQuery.From.Id;
+                string queryId = e.CallbackQuery.Id;
                 string[] data = e.CallbackQuery.Data.Split(':');
 
                 if (!(data is null) && data[0] != null)
@@ -290,7 +292,7 @@ namespace SystemicalConsensusBot
                     switch (data[0])
                     {
                         case "null":
-                            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                            Bot.AnswerCallbackQueryAsync(queryId);
                             break;
 
 
@@ -307,11 +309,11 @@ namespace SystemicalConsensusBot
                                 if (result)
                                 {
                                     databaseConnection.SavePoll(poll);
-                                    Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: $"Your vote was changed to: {newValue}", showAlert: false);
+                                    Bot.AnswerCallbackQueryAsync(queryId, text: $"Your vote was changed to: {newValue}", showAlert: false);
                                 }
                                 else
                                 {
-                                    Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Vote could not be changed. This Poll is not active anymore.");
+                                    Bot.AnswerCallbackQueryAsync(queryId, "Vote could not be changed. This Poll is not active anymore.");
                                     ClosePoll(e, poll);
                                 }
                                 break;
@@ -329,22 +331,19 @@ namespace SystemicalConsensusBot
                                     results += $"\n{i}. {answers[i]}: {userChoices[i]}";
                                 }
 
-                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, text: results, showAlert: true);
+                                Bot.AnswerCallbackQueryAsync(queryId, text: results, showAlert: true);
                             }
                             break;
-
                         case "showone":
                             {
                                 long pollId = Convert.ToInt64(data[1]);
                                 Poll poll = databaseConnection.GetPoll(pollId);
                                 string result = $"{poll.GetUserVotes(userId)[Convert.ToInt32(data[2])]}";
-                                Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, result);
+                                Bot.AnswerCallbackQueryAsync(queryId, result);
                                 break;
                             }
                         case "close":
-
                             {
-
                                 long pollId = Convert.ToInt64(data[1]);
                                 Poll poll = databaseConnection.GetPoll(pollId);
                                 if (userId == poll.OwnerId)
@@ -353,6 +352,21 @@ namespace SystemicalConsensusBot
                                 }
                                 break;
                             }
+                        case "delete":
+                            {
+                                long pollId = Convert.ToInt64(data[1]);
+                                databaseConnection.DeletePoll(pollId);
+                                Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
+                                Bot.AnswerCallbackQueryAsync(queryId);
+                            }
+                            break;
+                        case "doneDelete":
+                            {
+                                Bot.AnswerCallbackQueryAsync(queryId);
+                                Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
+                                Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: "neuerText", parseMode: ParseMode.Html);
+                            }
+                            break;
 
 
                     }
