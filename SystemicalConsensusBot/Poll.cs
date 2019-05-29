@@ -78,10 +78,13 @@ namespace SystemicalConsensusBot
             int counter = 0;
             foreach (var answer in Answers)
             {
-                InlineKeyboardButton[] row = new InlineKeyboardButton[3];
-                row[0] = new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:-", Text = "-" };
-                row[1] = new InlineKeyboardButton { CallbackData = $"showone:{PollId}:{counter}", Text = $"{counter}." };
-                row[2] = new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:+", Text = "+" };
+                InlineKeyboardButton[] row = new InlineKeyboardButton[3]
+                {
+                    new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:-", Text = "-" },
+                    new InlineKeyboardButton { CallbackData = $"showone:{PollId}:{counter}", Text = $"{counter}." },
+                    new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:+", Text = "+" }
+                };
+
                 rows.Add(row);
                 counter++;
             }
@@ -124,7 +127,7 @@ namespace SystemicalConsensusBot
                 ParticipantVotes[userId] = new int[Answers.Length];
             return ParticipantVotes[userId];
         }
-        
+
         public void Lock()
         {
             IsLocked = true;
@@ -146,7 +149,7 @@ namespace SystemicalConsensusBot
                 newValue = -1;
                 return false;
             }
-            
+
         }
     }
 }

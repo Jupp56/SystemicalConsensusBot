@@ -145,20 +145,25 @@ namespace SystemicalConsensusBot
 
 
 
-                        List<InlineKeyboardButton> rows = new List<InlineKeyboardButton>();
+                        List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
                         foreach (Poll poll in pollsOfUser)
                         {
-                            rows.Add(new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" });
+                            InlineKeyboardButton[] row = new InlineKeyboardButton[1];
+                            row[0] = new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" };
+                            rows.Add(row);
                         }
 
+                        rows.Add(new InlineKeyboardButton[1] { new InlineKeyboardButton() { CallbackData = $"doneDelete", Text = $"Done" } } );
                         InlineKeyboardMarkup markup = new InlineKeyboardMarkup(rows);
 
                         //List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
-                        //var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
-                        //var result = new InlineQueryResultArticle($"sendpoll:{poll.PollId}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
+                        //var content = new InputTextMessageContent("TextmessageContent") { ParseMode = ParseMode.Html };
+                        //var result = new InlineQueryResultArticle($"deletearticle", "ResultTitle", content) { ReplyMarkup = markup };
                         //results.Add(result);
 
-                        //Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
+                        Bot.SendTextMessageAsync(UserId, "blah", replyMarkup: markup);
+                        return;
+                        
                     }
                     if (!ConversationStates.ContainsKey(UserId))
                     {
