@@ -14,7 +14,7 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
-        #region help and descripion
+        #region help and description strings
         private const string About = ("<b>About this Bot</b>\n" +
                             "\n" +
                             "This is the systemic consensing Bot.\n" +
@@ -40,6 +40,8 @@ namespace SystemicalConsensusBot
                             $"Increment or decrement the value by pressing + or - on the desired option. Clicking on the option number shows the current value, \"Show all\" shows all of them.\n" +
                             $"The owner (and only he) can close the vote. Then the results are shown.\n" +
                             $"\nFor further information, send /about";
+
+        private static readonly string Version = "0.9.0";
         #endregion
 
         private static readonly TelegramBotClient Bot;
@@ -159,12 +161,14 @@ namespace SystemicalConsensusBot
                 {
                     if (e.Message.Text == "/start help")
                     {
+                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
                         Send(UserId, Help);
                         return;
                     }
 
                     else if (e.Message.Text == "/about")
                     {
+                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
                         Send(UserId, About);
                         return;
                     }
@@ -174,6 +178,12 @@ namespace SystemicalConsensusBot
                         InlineKeyboardMarkup markup = GetDeleteMarkup(UserId);
 
                         Bot.SendTextMessageAsync(UserId, "Choose one or several polls to delete", replyMarkup: markup);
+                        return;
+                    }
+
+                    else if (e.Message.Text == "/version")
+                    {
+                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
                         return;
                     }
 
