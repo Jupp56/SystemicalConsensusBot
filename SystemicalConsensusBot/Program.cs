@@ -41,7 +41,7 @@ namespace SystemicalConsensusBot
                             $"The owner (and only he) can close the vote. Then the results are shown.\n" +
                             $"\nFor further information, send /about";
 
-        private static readonly string Version = "0.9.0";
+        private static readonly string Version = "0.9.1";
         #endregion
 
         private static readonly TelegramBotClient Bot;
