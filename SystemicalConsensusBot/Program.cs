@@ -98,7 +98,7 @@ namespace SystemicalConsensusBot
                 Bot.OnInlineQuery += BotOnInlineQueryReceived;
                 Bot.OnReceiveError += BotOnReceiveError;
 
-                Bot.StartReceiving(Array.Empty<UpdateType>());
+                Bot.StartReceiving();
                 Console.WriteLine($"Start listening");
                 Console.ReadLine();
                 Bot.StopReceiving();
@@ -395,7 +395,7 @@ namespace SystemicalConsensusBot
                             {
                                 long pollId = Convert.ToInt64(data[1]);
                                 databaseConnection.DeletePoll(pollId);
-                                Bot.EditMessageTextAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId, "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
+                                Bot.EditMessageTextAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId, text: "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
                                 Bot.AnswerCallbackQueryAsync(queryId);
                             }
                             break;
