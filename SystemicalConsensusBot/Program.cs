@@ -83,10 +83,8 @@ namespace SystemicalConsensusBot
         }
         static void Main()
         {
-
             try
             {
-
                 Username = Bot.GetMeAsync().Result.Username;
 
                 var result = Bot.GetUpdatesAsync(-1, 1).Result;
