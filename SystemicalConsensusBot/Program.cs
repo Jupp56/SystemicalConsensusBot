@@ -42,21 +42,50 @@ namespace SystemicalConsensusBot
                             $"\nFor further information, send /about";
         #endregion
 
-        private static TelegramBotClient Bot;
+        private static readonly TelegramBotClient Bot;
         private const long devChatId = -1001070844778;
         private static string Username;
         public static string HelpLink => $"https://telegram.me/{Username}?start=help";
 
-        private static readonly DatabaseConnection databaseConnection = new DatabaseConnection(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "database.json"));
+        private static readonly string dataFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot");
+        private static readonly string databaseFile = Path.Combine(dataFolder, "database.json");
+        private static readonly string keyFile = Path.Combine(dataFolder, "key.txt");
+
+        private static readonly DatabaseConnection databaseConnection;
 
         private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
 
-        static void Main()
+        static Program()
         {
+            Reload:
             try
             {
-                //Console.WriteLine(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot"));
-                Bot = new TelegramBotClient(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "SystemicalConsensusBot", "key.txt")));
+                databaseConnection = new DatabaseConnection(databaseFile);
+            }
+            catch
+            {
+                Console.WriteLine($"\nCould not read database. Ensure that the database.json file is in \"{databaseFile}\" and readable.\n\nPress r to retry loading all files or any other key to exit.");
+                if (Console.ReadKey().KeyChar == 'r') goto Reload;
+                Environment.Exit(1);
+            }
+            try
+            {
+                Bot = new TelegramBotClient(File.ReadAllText(keyFile));
+            }
+            catch
+            {
+                Console.WriteLine($"\nCould not read key file. It should be located at {keyFile}. Ensure it is there, formatted correctly (just the key in the first line) and this programs has the permissions to read it.\n\nPress r to retry loading all files or any other key to exit.");
+                if (Console.ReadKey().KeyChar == 'r') goto Reload;
+                Environment.Exit(1);
+            }
+        }
+        static void Main()
+        {
+            
+            try
+            {
+                
+                
                 Username = Bot.GetMeAsync().Result.Username;
 
                 var result = Bot.GetUpdatesAsync(-1, 1).Result;
@@ -356,15 +385,14 @@ namespace SystemicalConsensusBot
                             {
                                 long pollId = Convert.ToInt64(data[1]);
                                 databaseConnection.DeletePoll(pollId);
-                                Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
+                                Bot.EditMessageTextAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId, "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
                                 Bot.AnswerCallbackQueryAsync(queryId);
                             }
                             break;
                         case "doneDelete":
                             {
                                 Bot.AnswerCallbackQueryAsync(queryId);
-                                Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
-                                Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: "neuerText", parseMode: ParseMode.Html);
+                                Bot.DeleteMessageAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId);
                             }
                             break;
 
