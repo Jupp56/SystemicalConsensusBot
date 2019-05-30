@@ -59,7 +59,7 @@ namespace SystemicalConsensusBot
 
         static Program()
         {
-            Reload:
+        Reload:
             try
             {
                 databaseConnection = new DatabaseConnection(databaseFile);
@@ -83,11 +83,10 @@ namespace SystemicalConsensusBot
         }
         static void Main()
         {
-            
+
             try
             {
-                
-                
+
                 Username = Bot.GetMeAsync().Result.Username;
 
                 var result = Bot.GetUpdatesAsync(-1, 1).Result;
@@ -146,8 +145,6 @@ namespace SystemicalConsensusBot
 
             Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), parseMode: ParseMode.Html);
         }
-
-
 
         #region BotEventHandlers
         private static void BotOnMessageReceived(object sender, MessageEventArgs e)
