@@ -97,7 +97,18 @@ namespace SystemicalConsensusBot
 
                 Bot.StartReceiving();
                 Console.WriteLine($"Start listening");
-                Console.ReadLine();
+
+                commandLoop:
+                string command = Console.ReadLine();
+                if(command == "/close")
+                {
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    goto commandLoop;
+                }
+
                 Bot.StopReceiving();
             }
             catch (Exception ex) { Console.WriteLine(ex.StackTrace); }
