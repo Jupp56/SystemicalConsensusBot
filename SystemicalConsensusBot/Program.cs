@@ -101,7 +101,7 @@ namespace SystemicalConsensusBot
 
                 commandLoop:
                 string command = Console.ReadLine();
-                if(command == "/close")
+                if(command == "/stop")
                 {
                     Environment.Exit(0);
                 }
