@@ -81,6 +81,7 @@ namespace SystemicalConsensusBot
                 Environment.Exit(1);
             }
         }
+
         static void Main()
         {
             try
