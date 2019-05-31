@@ -97,12 +97,13 @@ namespace SystemicalConsensusBot
                 Bot.OnReceiveError += BotOnReceiveError;
 
                 Bot.StartReceiving();
-                Console.WriteLine($"Start listening");
+                Console.WriteLine($"Server started listening, Bot ready");
 
                 commandLoop:
                 string command = Console.ReadLine();
                 if(command == "/stop")
                 {
+                    Console.WriteLine("Exiting");
                     Environment.Exit(0);
                 }
                 else
