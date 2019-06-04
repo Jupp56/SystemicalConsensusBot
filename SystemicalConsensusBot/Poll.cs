@@ -60,14 +60,26 @@ namespace SystemicalConsensusBot
             {
                 string message = $"Poll:\n<b>{Topic}</b>\n\nResults are:\n";
 
-                double[] results = ComputeResult();
-                for (int i = 0; i < Answers.Length; i++)
+                if (ParticipantVotes.Count > 0)
                 {
-                    bool winner = results.OrderBy(x => x).FirstOrDefault() == results[i];
-                    message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
-                }
+                    
+                    double[] results = ComputeResult();
+                    for (int i = 0; i < Answers.Length; i++)
+                    {
+                        bool winner = results.OrderBy(x => x).FirstOrDefault() == results[i];
+                        message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
+                    }
 
-                return message;
+                    message += $"\n\nIn total, {ParticipantVotes.Count.ToString()} people participated!\n";
+
+                    return message;
+                }
+                else
+                {
+                    message += "\nSadly, nobody has voted, so no results to display here :-(";
+
+                    return message;
+                }
             }
         }
 
@@ -114,11 +126,6 @@ namespace SystemicalConsensusBot
             }
 
             return results.ToArray();
-        }
-
-        public double[] GetPollResults()
-        {
-            return ComputeResult();
         }
 
         public int[] GetUserVotes(int userId)
