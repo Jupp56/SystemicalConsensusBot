@@ -223,9 +223,16 @@ namespace SystemicalConsensusBot
                         case ConversationState.InteractionStates.AnswerAsked:
                             if (e.Message.Text == "/done" || e.Message.Text == "/save")
                             {
-                                databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.ToArray()));
-                                Send(UserId, "Poll was saved successfully!", new InlineKeyboardMarkup(new InlineKeyboardButton { SwitchInlineQuery = state.Topic, Text = "Share poll" }));
-                                RemoveUser(UserId);
+                                if (state.Answers.Count >= 2)
+                                {
+                                    databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.ToArray()));
+                                    Send(UserId, "Poll was saved successfully!", new InlineKeyboardMarkup(new InlineKeyboardButton { SwitchInlineQuery = state.Topic, Text = "Share poll" }));
+                                    RemoveUser(UserId);
+                                }
+                                else
+                                {
+                                    Send(UserId, "Not enough answers provided, please provide at least two.");
+                                }
                             }
                             else
                             {
