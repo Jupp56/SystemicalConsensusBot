@@ -54,6 +54,9 @@ namespace SystemicalConsensusBot
                     message += $"\n{i}: {Answers[i]}";
                 }
 
+                if(ParticipantVotes.Count==1) message += $"\n\n<i>{ParticipantVotes.Count} person has voted so far</i>";
+                else message += $"\n\n<i>{ParticipantVotes.Count} people have voted so far</i>";
+
                 return message;
             }
             else
@@ -70,7 +73,8 @@ namespace SystemicalConsensusBot
                         message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
                     }
 
-                    message += $"\n\nIn total, {ParticipantVotes.Count.ToString()} people participated!\n";
+                    if(ParticipantVotes.Count==1) message += $"\n\n<i>In total, only {ParticipantVotes.Count.ToString()} person participated.</i>\n";
+                    else message += $"\n\n<i>In total, {ParticipantVotes.Count.ToString()} people participated!</i>\n";
 
                     return message;
                 }
@@ -106,6 +110,11 @@ namespace SystemicalConsensusBot
             InlineKeyboardButton[] lastlastRow = { new InlineKeyboardButton { Url = Program.HelpLink, Text = "Help" } };
             rows.Add(lastlastRow);
             return new InlineKeyboardMarkup(rows.ToArray());
+        }
+
+        public bool HasVoted(int UserId)
+        {
+            return ParticipantVotes.ContainsKey(UserId);
         }
 
         private double[] ComputeResult()

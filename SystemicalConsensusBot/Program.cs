@@ -99,9 +99,9 @@ namespace SystemicalConsensusBot
                 Bot.StartReceiving();
                 Console.WriteLine($"Server started listening, Bot ready");
 
-                commandLoop:
+            commandLoop:
                 string command = Console.ReadLine();
-                if(command == "/stop")
+                if (command == "/stop")
                 {
                     Console.WriteLine("Exiting");
                     Environment.Exit(0);
@@ -150,7 +150,7 @@ namespace SystemicalConsensusBot
             poll.Lock();
 
             databaseConnection.SavePoll(poll);
-            Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+            
 
             Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
 
@@ -358,12 +358,15 @@ namespace SystemicalConsensusBot
                                 int changeValueBy = data[3] == "+" ? 1 : -1;
 
                                 Poll poll = databaseConnection.GetPoll(pollId);
+                                bool hasVoted = poll.HasVoted(userId);
+
 
                                 bool result = poll.Vote(userId, answerIndex, changeValueBy, out int newValue);
                                 if (result)
                                 {
                                     databaseConnection.SavePoll(poll);
-                                    Bot.AnswerCallbackQueryAsync(queryId, text: $"Your vote was changed to: {newValue}", showAlert: false);
+                                    Bot.AnswerCallbackQueryAsync(queryId, text: $"Your vote for option {answerIndex.ToString()} was changed to: {newValue}", showAlert: false);
+                                    if (!hasVoted) Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), replyMarkup: poll.GetInlineKeyboardMarkup(), parseMode: ParseMode.Html);
                                 }
                                 else
                                 {
@@ -388,14 +391,16 @@ namespace SystemicalConsensusBot
                                 Bot.AnswerCallbackQueryAsync(queryId, text: results, showAlert: true);
                             }
                             break;
+
                         case "showone":
                             {
                                 long pollId = Convert.ToInt64(data[1]);
                                 Poll poll = databaseConnection.GetPoll(pollId);
-                                string result = $"{poll.GetUserVotes(userId)[Convert.ToInt32(data[2])]}";
+                                string result = $"Current resistance value for option {data[2]}: {poll.GetUserVotes(userId)[Convert.ToInt32(data[2])]}";
                                 Bot.AnswerCallbackQueryAsync(queryId, result);
                                 break;
                             }
+
                         case "close":
                             {
                                 long pollId = Convert.ToInt64(data[1]);
@@ -403,9 +408,18 @@ namespace SystemicalConsensusBot
                                 if (userId == poll.OwnerId)
                                 {
                                     ClosePoll(e, poll);
+                                    Bot.AnswerCallbackQueryAsync(queryId);
                                 }
+                                else
+                                {
+                                    string result = "You cannot close this poll, as you did not create it";
+                                    Bot.AnswerCallbackQueryAsync(queryId, result);
+                                }
+
+                                
                                 break;
                             }
+
                         case "delete":
                             {
                                 long pollId = Convert.ToInt64(data[1]);
