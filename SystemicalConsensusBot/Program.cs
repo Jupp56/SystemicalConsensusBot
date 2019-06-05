@@ -150,7 +150,7 @@ namespace SystemicalConsensusBot
             poll.Lock();
 
             databaseConnection.SavePoll(poll);
-            
+
 
             Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
 
@@ -171,6 +171,12 @@ namespace SystemicalConsensusBot
                     {
                         Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
                         Send(UserId, Help);
+                        return;
+                    }
+
+                    if (e.Message.Text == "/start new")
+                    {
+                        WelcomeUser(UserId);
                         return;
                     }
 
@@ -279,7 +285,7 @@ namespace SystemicalConsensusBot
             List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
             if (polls.Count < 1)
             {
-                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
+                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0, switchPmText: "Create new poll", switchPmParameter: "new");
                 return;
             }
             polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
@@ -416,7 +422,7 @@ namespace SystemicalConsensusBot
                                     Bot.AnswerCallbackQueryAsync(queryId, result);
                                 }
 
-                                
+
                                 break;
                             }
 
