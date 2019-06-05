@@ -14,7 +14,7 @@ namespace SystemicalConsensusBot
 {
     class Program
     {
-        #region help and description strings
+        #region help and description strings, version
         private const string About = ("<b>About this Bot</b>\n" +
                             "\n" +
                             "This is the systemic consensing Bot.\n" +
@@ -41,7 +41,7 @@ namespace SystemicalConsensusBot
                             $"The owner (and only he) can close the vote. Then the results are shown.\n" +
                             $"\nFor further information, send /about";
 
-        private static readonly string Version = "Hotfix v1.0.1";
+        private static readonly string Version = "v1.0.1-Enhancements";
         #endregion
 
         private static readonly TelegramBotClient Bot;
