@@ -431,7 +431,7 @@ namespace SystemicalConsensusBot
                                 long pollId = Convert.ToInt64(data[1]);
                                 databaseConnection.DeletePoll(pollId);
                                 Bot.EditMessageTextAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId, text: "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
-                                Bot.AnswerCallbackQueryAsync(queryId);
+                                Bot.AnswerCallbackQueryAsync(queryId, text: "Poll deleted", showAlert: false);
                             }
                             break;
                         case "doneDelete":
