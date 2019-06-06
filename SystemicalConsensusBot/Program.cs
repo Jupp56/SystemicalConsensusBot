@@ -283,11 +283,6 @@ namespace SystemicalConsensusBot
             var userId = e.InlineQuery.From.Id;
             var polls = databaseConnection.GetPollsByOwner(userId);
             List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
-            if (polls.Count < 1)
-            {
-                Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0, switchPmText: "Create new poll", switchPmParameter: "new");
-                return;
-            }
             polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
             foreach (var poll in polls)
             {
@@ -295,7 +290,7 @@ namespace SystemicalConsensusBot
                 var result = new InlineQueryResultArticle($"sendpoll:{poll.PollId}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
                 results.Add(result);
             }
-            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0);
+            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0, switchPmText: "Create new poll", switchPmParameter: "new");
         }
 
         private static double ModifiedLevenshteinDistance(string source, string target)
