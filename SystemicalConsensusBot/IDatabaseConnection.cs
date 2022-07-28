@@ -10,6 +10,6 @@ namespace SystemicalConsensusBot
     {
         Poll GetPoll(long id);
         Poll SavePoll(Poll poll);
-        List<Poll> GetPollsByOwner(int ownerID);
+        List<Poll> GetPollsByOwner(long ownerID);
     }
 }

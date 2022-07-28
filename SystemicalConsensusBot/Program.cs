@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Args;
+using Telegram.Bot.Polling;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InlineQueryResults;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -55,7 +58,10 @@ namespace SystemicalConsensusBot
 
         private static readonly DatabaseConnection databaseConnection;
 
-        private static Dictionary<int, ConversationState> ConversationStates { get; set; } = new Dictionary<int, ConversationState>();
+        private static Dictionary<long, ConversationState> ConversationStates { get; set; } = new Dictionary<long, ConversationState>();
+
+
+
 
         static Program()
         {
@@ -72,7 +78,7 @@ namespace SystemicalConsensusBot
             }
             try
             {
-                Bot = new TelegramBotClient(File.ReadAllText(keyFile));
+                Bot = new TelegramBotClient(System.IO.File.ReadAllText(keyFile));
             }
             catch
             {
@@ -84,42 +90,72 @@ namespace SystemicalConsensusBot
 
         static void Main()
         {
-            try
+            using var cts = new CancellationTokenSource();
+
+            Username = Bot.GetMeAsync().Result.Username;
+
+            var result = Bot.GetUpdatesAsync(-1, 1).Result;
+            if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
+
+            ReceiverOptions receiverOptions = new()
             {
-                Username = Bot.GetMeAsync().Result.Username;
+                AllowedUpdates = Array.Empty<UpdateType>() // receive all update types
+            };
 
-                var result = Bot.GetUpdatesAsync(-1, 1).Result;
-                if (result.Length > 0) Bot.GetUpdatesAsync(result[0].Id + 1).Wait();
+            Bot.StartReceiving(
+            updateHandler: HandleUpdateAsync,
+            pollingErrorHandler: HandlePollingErrorAsync,
+            receiverOptions: receiverOptions,
+            cancellationToken: cts.Token
+            );
 
-                Bot.OnMessage += BotOnMessageReceived;
-                Bot.OnCallbackQuery += BotOnCallbackQueryReceived;
-                Bot.OnInlineQuery += BotOnInlineQueryReceived;
-                Bot.OnReceiveError += BotOnReceiveError;
 
-                Bot.StartReceiving();
-                Console.WriteLine($"Server started listening, Bot ready");
 
-            commandLoop:
-                string command = Console.ReadLine();
-                if (command == "/stop")
-                {
-                    Console.WriteLine("Exiting");
-                    Environment.Exit(0);
-                }
-                else
-                {
-                    goto commandLoop;
-                }
 
-                Bot.StopReceiving();
+            Console.WriteLine($"Server started listening, Bot ready");
+
+            while (Console.ReadLine() != "/stop")
+            {
+
             }
-            catch (Exception ex) { Console.WriteLine(ex.StackTrace); }
+
+            Console.WriteLine("Exiting");
+            Environment.Exit(0);
+
+
+
         }
 
-        #region userInteraction
-        public static void WelcomeUser(int UserId)
+        private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            Send(UserId, "Welcome to Systemical Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please send me the topic for your poll.");
+            var message = update.Message;
+
+            if (message != null)
+            {
+                await BotOnMessageReceived(message);
+            }
+
+            if (update.CallbackQuery != null)
+            {
+                await BotOnCallbackQueryReceived(update.CallbackQuery);
+            }
+
+            if (update.InlineQuery != null) await BotOnInlineQueryReceived(update.InlineQuery);
+
+
+        }
+
+
+        private static async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        {
+            await Send(devChatId, exception.ToString());
+        }
+
+
+        #region userInteraction
+        public static async Task WelcomeUser(long UserId)
+        {
+            await Send(UserId, "Welcome to Systemical Consensus Bot, the bot that finally decides: Where do we wanna eat?\nTo proceed, please send me the topic for your poll.");
 
             if (ConversationStates.ContainsKey(UserId))
             {
@@ -132,86 +168,85 @@ namespace SystemicalConsensusBot
             }
         }
 
-        public static void RemoveUser(int UserId)
+        public static void RemoveUser(long UserId)
         {
             if (ConversationStates.ContainsKey(UserId)) ConversationStates.Remove(UserId);
         }
         #endregion
 
         #region helpers
-        public static void Send(long chatId, string message, IReplyMarkup markup = null)
+        public static async Task Send(long chatId, string message, IReplyMarkup markup = null)
         {
-            Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, replyMarkup: markup);
+            await Bot.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, replyMarkup: markup);
         }
         #endregion
 
-        private static void ClosePoll(CallbackQueryEventArgs e, Poll poll)
+        private static async void ClosePoll(string inlineMessageId, Poll poll)
         {
             poll.Lock();
 
             databaseConnection.SavePoll(poll);
 
 
-            Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.InlineMessageId);
+            await Bot.EditMessageReplyMarkupAsync(inlineMessageId);
 
-            Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), parseMode: ParseMode.Html);
+            await Bot.EditMessageTextAsync(inlineMessageId, text: poll.GetPollMessage(), parseMode: ParseMode.Html);
         }
 
         #region BotEventHandlers
-        private static void BotOnMessageReceived(object sender, MessageEventArgs e)
+        private static async Task BotOnMessageReceived(Message m)
         {
             try
             {
-                if (e.Message.Chat.Type != ChatType.Private) return;
-                int UserId = e.Message.From.Id;
-
-                if (e.Message.Entities?.Length > 0 && e.Message.Entities[0].Type == MessageEntityType.BotCommand)
+                if (m.Chat.Type != ChatType.Private) return;
+                long UserId = m.From.Id;
+                string text = m.Text;
+                if (m.Entities?.Length > 0 && m.Entities[0].Type == MessageEntityType.BotCommand)
                 {
-                    if (e.Message.Text == "/start help")
+                    if (text == "/start help")
                     {
-                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
-                        Send(UserId, Help);
+                        await Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
+                        await Send(UserId, Help);
+                        return;
+                    }
+                    else if (text == "/start new")
+                    {
+                        await WelcomeUser(UserId);
                         return;
                     }
 
-                    if (e.Message.Text == "/start new")
+                    else if (text == "/about")
                     {
-                        WelcomeUser(UserId);
+                        await Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
+                        await Send(UserId, About);
                         return;
                     }
 
-                    else if (e.Message.Text == "/about")
-                    {
-                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
-                        Send(UserId, About);
-                        return;
-                    }
-
-                    else if (e.Message.Text == "/delete")
+                    else if (text == "/delete")
                     {
                         InlineKeyboardMarkup markup = GetDeleteMarkup(UserId);
 
-                        Bot.SendTextMessageAsync(UserId, "Choose one or several polls to delete", replyMarkup: markup);
+                        await Bot.SendTextMessageAsync(UserId, "Choose one or several polls to delete", replyMarkup: markup);
                         return;
                     }
 
-                    else if (e.Message.Text == "/version")
+                    else if (text == "/version")
                     {
-                        Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
+                        await Send(UserId, $"{Username} by Olfi01 and Jupp56, version <i>{Version}</i>");
                         return;
                     }
 
                     if (!ConversationStates.ContainsKey(UserId))
                     {
-                        WelcomeUser(UserId);
+                        await WelcomeUser(UserId);
                         return;
                     }
-                    switch (e.Message.EntityValues.ElementAt(0))
+                    switch (m.EntityValues.ElementAt(0))
                     {
                         case "/cancel":
                         case "/stop":
                             RemoveUser(UserId);
-                            Send(UserId, "Canceled whatever I was doing just now.");
+                            await Send(UserId, "Canceled whatever I was doing just now.");
                             return;
                     }
                 }
@@ -219,31 +254,32 @@ namespace SystemicalConsensusBot
                 if (ConversationStates.ContainsKey(UserId))
                 {
                     var state = ConversationStates[UserId];
+                    string escapedText = text.Escape();
                     switch (state.InteractionState)
                     {
                         case ConversationState.InteractionStates.TopicAsked:
-                            state.Topic = e.Message.Text.Escape();
-                            Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
+                            state.Topic = escapedText;
+                            await Send(UserId, $"Set topic to \"{state.Topic}\"! Send me your first answer now.");
                             state.InteractionState = ConversationState.InteractionStates.AnswerAsked;
                             break;
                         case ConversationState.InteractionStates.AnswerAsked:
-                            if (e.Message.Text == "/done" || e.Message.Text == "/save")
+                            if (text == "/done" || text == "/save")
                             {
                                 if (state.Answers.Count >= 2)
                                 {
                                     databaseConnection.SavePoll(new Poll(state.Topic, UserId, state.Answers.ToArray()));
-                                    Send(UserId, "Poll was saved successfully!", new InlineKeyboardMarkup(new InlineKeyboardButton { SwitchInlineQuery = state.Topic, Text = "Share poll" }));
+                                    await Send(UserId, "Poll was saved successfully!", new InlineKeyboardMarkup(new InlineKeyboardButton("Share poll") { SwitchInlineQuery = state.Topic }));
                                     RemoveUser(UserId);
                                 }
                                 else
                                 {
-                                    Send(UserId, "Not enough answers provided, please provide at least two.");
+                                    await Send(UserId, "Not enough answers provided, please provide at least two.");
                                 }
                             }
                             else
                             {
-                                state.Answers.Add(e.Message.Text.Escape());
-                                Send(UserId, $"Added answer \"{e.Message.Text.Escape()}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
+                                state.Answers.Add(escapedText);
+                                await Send(UserId, $"Added answer \"{escapedText}\". Send me another answer{(state.Answers.Count > 1 ? " or send /done if you're finished." : ".")}");
                             }
                             break;
                     }
@@ -251,46 +287,42 @@ namespace SystemicalConsensusBot
             }
             catch (Exception ex)
             {
-                Send(devChatId, ex.ToString());
+                await Send(devChatId, ex.ToString());
             }
         }
 
-        private static InlineKeyboardMarkup GetDeleteMarkup(int UserId)
+        private static InlineKeyboardMarkup GetDeleteMarkup(long UserId)
         {
             List<Poll> pollsOfUser = databaseConnection.GetPollsByOwner(UserId);
 
-            List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
+            List<InlineKeyboardButton[]> rows = new();
 
             foreach (Poll poll in pollsOfUser)
             {
                 InlineKeyboardButton[] row = new InlineKeyboardButton[1];
-                row[0] = new InlineKeyboardButton() { CallbackData = $"delete:{poll.PollId}", Text = $"{poll.Topic}" };
+                row[0] = new InlineKeyboardButton(poll.Topic) { CallbackData = $"delete:{poll.PollId}" };
                 rows.Add(row);
             }
 
-            rows.Add(new InlineKeyboardButton[1] { new InlineKeyboardButton() { CallbackData = $"doneDelete", Text = $"Done" } });
-            InlineKeyboardMarkup markup = new InlineKeyboardMarkup(rows);
+            rows.Add(new InlineKeyboardButton[1] { new InlineKeyboardButton("Done") { CallbackData = $"doneDelete" } });
+            InlineKeyboardMarkup markup = new(rows);
             return markup;
         }
 
-        private static void BotOnReceiveError(object sender, ReceiveErrorEventArgs e)
-        {
-            Send(devChatId, e.ApiRequestException.ToString());
-        }
 
-        private static void BotOnInlineQueryReceived(object sender, InlineQueryEventArgs e)
+        private static async Task BotOnInlineQueryReceived(InlineQuery query)
         {
-            var userId = e.InlineQuery.From.Id;
+            var userId = query.From.Id;
             var polls = databaseConnection.GetPollsByOwner(userId);
-            List<InlineQueryResultBase> results = new List<InlineQueryResultBase>();
-            polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, e.InlineQuery.Query)).Take(Math.Min(polls.Count, 50)).ToList();
+            List<InlineQueryResult> results = new();
+            polls = polls.OrderBy(x => ModifiedLevenshteinDistance(x.Topic, query.Query)).Take(Math.Min(polls.Count, 50)).ToList();
             foreach (var poll in polls)
             {
                 var content = new InputTextMessageContent(poll.GetPollMessage()) { ParseMode = ParseMode.Html };
                 var result = new InlineQueryResultArticle($"sendpoll:{poll.PollId}", poll.Topic.Unescape(), content) { ReplyMarkup = poll.GetInlineKeyboardMarkup() };
                 results.Add(result);
             }
-            Bot.AnswerInlineQueryAsync(e.InlineQuery.Id, results, isPersonal: true, cacheTime: 0, switchPmText: "Create new poll", switchPmParameter: "new");
+            await Bot.AnswerInlineQueryAsync(query.Id, results, isPersonal: true, cacheTime: 0, switchPmText: "Create new poll", switchPmParameter: "new");
         }
 
         private static double ModifiedLevenshteinDistance(string source, string target)
@@ -304,9 +336,7 @@ namespace SystemicalConsensusBot
 
             if (source.Length > target.Length)
             {
-                var temp = target;
-                target = source;
-                source = temp;
+                (source, target) = (target, source);
             }
 
             var m = target.Length;
@@ -334,20 +364,20 @@ namespace SystemicalConsensusBot
             return distance[currentRow, m];
         }
 
-        private static void BotOnCallbackQueryReceived(object sender, CallbackQueryEventArgs e)
+        private static async Task BotOnCallbackQueryReceived(CallbackQuery query)
         {
             try
             {
-                int userId = e.CallbackQuery.From.Id;
-                string queryId = e.CallbackQuery.Id;
-                string[] data = e.CallbackQuery.Data.Split(':');
+                long userId = query.From.Id;
+                string queryId = query.Id;
+                string[] data = query.Data.Split(':');
 
-                if (!(data is null) && data[0] != null)
+                if (data is not null && data[0] != null)
                 {
                     switch (data[0])
                     {
                         case "null":
-                            Bot.AnswerCallbackQueryAsync(queryId);
+                            await Bot.AnswerCallbackQueryAsync(queryId);
                             break;
 
 
@@ -366,13 +396,13 @@ namespace SystemicalConsensusBot
                                 if (result)
                                 {
                                     databaseConnection.SavePoll(poll);
-                                    Bot.AnswerCallbackQueryAsync(queryId, text: $"Your vote for option {answerIndex.ToString()} was changed to: {newValue}", showAlert: false);
-                                    if (!hasVoted) Bot.EditMessageTextAsync(inlineMessageId: e.CallbackQuery.InlineMessageId, text: poll.GetPollMessage(), replyMarkup: poll.GetInlineKeyboardMarkup(), parseMode: ParseMode.Html);
+                                    await Bot.AnswerCallbackQueryAsync(queryId, text: $"Your vote for option {answerIndex} was changed to: {newValue}", showAlert: false);
+                                    if (!hasVoted) await Bot.EditMessageTextAsync(inlineMessageId: query.InlineMessageId, text: poll.GetPollMessage(), replyMarkup: poll.GetInlineKeyboardMarkup(), parseMode: ParseMode.Html);
                                 }
                                 else
                                 {
-                                    Bot.AnswerCallbackQueryAsync(queryId, "Vote could not be changed. This Poll is not active anymore.");
-                                    ClosePoll(e, poll);
+                                    await Bot.AnswerCallbackQueryAsync(queryId, "Vote could not be changed. This Poll is not active anymore.");
+                                    ClosePoll(query.InlineMessageId, poll);
                                 }
                                 break;
                             }
@@ -389,7 +419,7 @@ namespace SystemicalConsensusBot
                                     results += $"\n{i}. {answers[i]}: {userChoices[i]}";
                                 }
 
-                                Bot.AnswerCallbackQueryAsync(queryId, text: results, showAlert: true);
+                                await Bot.AnswerCallbackQueryAsync(queryId, text: results, showAlert: true);
                             }
                             break;
 
@@ -398,7 +428,7 @@ namespace SystemicalConsensusBot
                                 long pollId = Convert.ToInt64(data[1]);
                                 Poll poll = databaseConnection.GetPoll(pollId);
                                 string result = $"Current resistance value for option {data[2]}: {poll.GetUserVotes(userId)[Convert.ToInt32(data[2])]}";
-                                Bot.AnswerCallbackQueryAsync(queryId, result);
+                                await Bot.AnswerCallbackQueryAsync(queryId, result);
                                 break;
                             }
 
@@ -408,15 +438,14 @@ namespace SystemicalConsensusBot
                                 Poll poll = databaseConnection.GetPoll(pollId);
                                 if (userId == poll.OwnerId)
                                 {
-                                    ClosePoll(e, poll);
-                                    Bot.AnswerCallbackQueryAsync(queryId);
+                                    ClosePoll(query.InlineMessageId, poll);
+                                    await Bot.AnswerCallbackQueryAsync(queryId);
                                 }
                                 else
                                 {
                                     string result = "You cannot close this poll, as you did not create it";
-                                    Bot.AnswerCallbackQueryAsync(queryId, result);
+                                    await Bot.AnswerCallbackQueryAsync(queryId, result);
                                 }
-
 
                                 break;
                             }
@@ -425,14 +454,14 @@ namespace SystemicalConsensusBot
                             {
                                 long pollId = Convert.ToInt64(data[1]);
                                 databaseConnection.DeletePoll(pollId);
-                                Bot.EditMessageTextAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId, text: "Items to delete", replyMarkup: GetDeleteMarkup(e.CallbackQuery.From.Id));
-                                Bot.AnswerCallbackQueryAsync(queryId, text: "Poll deleted", showAlert: false);
+                                await Bot.EditMessageTextAsync(chatId: query.Message.Chat.Id, messageId: query.Message.MessageId, text: "Items to delete", replyMarkup: GetDeleteMarkup(query.From.Id));
+                                await Bot.AnswerCallbackQueryAsync(queryId, text: "Poll deleted", showAlert: false);
                             }
                             break;
                         case "doneDelete":
                             {
-                                Bot.AnswerCallbackQueryAsync(queryId);
-                                Bot.DeleteMessageAsync(chatId: e.CallbackQuery.Message.Chat.Id, messageId: e.CallbackQuery.Message.MessageId);
+                                await Bot.AnswerCallbackQueryAsync(queryId);
+                                await Bot.DeleteMessageAsync(chatId: query.Message.Chat.Id, messageId: query.Message.MessageId);
                             }
                             break;
 
@@ -443,7 +472,7 @@ namespace SystemicalConsensusBot
             }
             catch (Exception ex)
             {
-                Send(devChatId, ex.ToString());
+                await Send(devChatId, ex.ToString());
             }
         }
 

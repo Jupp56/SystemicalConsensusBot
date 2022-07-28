@@ -14,19 +14,19 @@ namespace SystemicalConsensusBot
         [JsonProperty]
         public long PollId { get; internal set; } = -1;
         [JsonProperty]
-        public int OwnerId { get; }
+        public long OwnerId { get; }
         [JsonProperty]
         public bool IsLocked { get; private set; }
         [JsonProperty]
         public string[] Answers { get; }
         [JsonProperty]
-        private Dictionary<int, int[]> ParticipantVotes { get; } = new Dictionary<int, int[]>();
+        private Dictionary<long, int[]> ParticipantVotes { get; } = new Dictionary<long, int[]>();
         [JsonProperty]
         public string Topic { get; }
 
 #pragma warning disable IDE0051
         [JsonConstructor]
-        private Poll(long pollId, int ownerId, bool isLocked, string[] answers, Dictionary<int, int[]> participantVotes, string topic)
+        private Poll(long pollId, long ownerId, bool isLocked, string[] answers, Dictionary<long, int[]> participantVotes, string topic)
         {
             PollId = pollId;
             OwnerId = ownerId;
@@ -37,7 +37,7 @@ namespace SystemicalConsensusBot
         }
 #pragma warning restore IDE0051
 
-        public Poll(string topic, int ownerId, string[] answers)
+        public Poll(string topic, long ownerId, string[] answers)
         {
             this.Topic = topic;
             this.OwnerId = ownerId;
@@ -54,7 +54,7 @@ namespace SystemicalConsensusBot
                     message += $"\n{i}: {Answers[i]}";
                 }
 
-                if(ParticipantVotes.Count==1) message += $"\n\n<i>{ParticipantVotes.Count} person has voted so far</i>";
+                if (ParticipantVotes.Count == 1) message += $"\n\n<i>{ParticipantVotes.Count} person has voted so far</i>";
                 else message += $"\n\n<i>{ParticipantVotes.Count} people have voted so far</i>";
 
                 return message;
@@ -65,7 +65,7 @@ namespace SystemicalConsensusBot
 
                 if (ParticipantVotes.Count > 0)
                 {
-                    
+
                     double[] results = ComputeResult();
                     for (int i = 0; i < Answers.Length; i++)
                     {
@@ -73,8 +73,8 @@ namespace SystemicalConsensusBot
                         message += $"\n{(winner ? "<i>" : "")}{i}. {Answers[i]}: {results[i]:N2}{(winner ? "</i>" : "")}";
                     }
 
-                    if(ParticipantVotes.Count==1) message += $"\n\n<i>In total, only {ParticipantVotes.Count.ToString()} person participated.</i>\n";
-                    else message += $"\n\n<i>In total, {ParticipantVotes.Count.ToString()} people participated!</i>\n";
+                    if (ParticipantVotes.Count == 1) message += $"\n\n<i>In total, only {ParticipantVotes.Count} person participated.</i>\n";
+                    else message += $"\n\n<i>In total, {ParticipantVotes.Count} people participated!</i>\n";
 
                     return message;
                 }
@@ -90,38 +90,38 @@ namespace SystemicalConsensusBot
         public InlineKeyboardMarkup GetInlineKeyboardMarkup()
         {
             if (IsLocked) return null;
-            List<InlineKeyboardButton[]> rows = new List<InlineKeyboardButton[]>();
+            List<InlineKeyboardButton[]> rows = new();
             int counter = 0;
             foreach (var answer in Answers)
             {
                 InlineKeyboardButton[] row = new InlineKeyboardButton[3]
                 {
-                    new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:-", Text = "-" },
-                    new InlineKeyboardButton { CallbackData = $"showone:{PollId}:{counter}", Text = $"{counter}." },
-                    new InlineKeyboardButton { CallbackData = $"vote:{PollId}:{counter}:+", Text = "+" }
+                    new InlineKeyboardButton("-") { CallbackData = $"vote:{PollId}:{counter}:-"},
+                    new InlineKeyboardButton(counter.ToString()) { CallbackData = $"showone:{PollId}:{counter}"},
+                    new InlineKeyboardButton("+") { CallbackData = $"vote:{PollId}:{counter}:+" }
                 };
 
                 rows.Add(row);
                 counter++;
             }
-            InlineKeyboardButton[] lastRow = { new InlineKeyboardButton { CallbackData = $"show:{PollId}", Text = "Show my votes" },
-                new InlineKeyboardButton { CallbackData = $"close:{PollId}", Text = "Close poll" } };
+            InlineKeyboardButton[] lastRow = { new InlineKeyboardButton("Show my votes") { CallbackData = $"show:{PollId}" },
+                new InlineKeyboardButton("Close poll") { CallbackData = $"close:{PollId}" } };
             rows.Add(lastRow);
-            InlineKeyboardButton[] lastlastRow = { new InlineKeyboardButton { Url = Program.HelpLink, Text = "Help" } };
+            InlineKeyboardButton[] lastlastRow = { new InlineKeyboardButton("Help") { Url = Program.HelpLink } };
             rows.Add(lastlastRow);
             return new InlineKeyboardMarkup(rows.ToArray());
         }
 
-        public bool HasVoted(int UserId)
+        public bool HasVoted(long UserId)
         {
             return ParticipantVotes.ContainsKey(UserId);
         }
 
         private double[] ComputeResult()
         {
-            List<double> results = new List<double>();
+            List<double> results = new();
 
-            for (int i = 0; i < Answers.Count(); i++)
+            for (int i = 0; i < Answers.Length; i++)
             {
                 double result = 0;
 
@@ -137,7 +137,7 @@ namespace SystemicalConsensusBot
             return results.ToArray();
         }
 
-        public int[] GetUserVotes(int userId)
+        public int[] GetUserVotes(long userId)
         {
             if (!ParticipantVotes.ContainsKey(userId))
                 ParticipantVotes[userId] = new int[Answers.Length];
@@ -149,7 +149,7 @@ namespace SystemicalConsensusBot
             IsLocked = true;
         }
 
-        public bool Vote(int userID, int answerId, int change, out int newValue)
+        public bool Vote(long userID, int answerId, int change, out int newValue)
         {
             if (!IsLocked)
             {

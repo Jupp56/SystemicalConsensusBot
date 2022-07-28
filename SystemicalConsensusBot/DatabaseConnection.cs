@@ -36,7 +36,7 @@ namespace SystemicalConsensusBot
             return dict[id];
         }
 
-        public List<Poll> GetPollsByOwner(int ownerID)
+        public List<Poll> GetPollsByOwner(long ownerID)
         {
             var dict = GetDict();
             return dict.Where(x => x.Value.OwnerId == ownerID).Select(x => x.Value).ToList();
