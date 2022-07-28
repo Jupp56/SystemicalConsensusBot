@@ -58,7 +58,7 @@ namespace SystemicalConsensusBot
 
         private static readonly DatabaseConnection databaseConnection;
 
-        private static Dictionary<long, ConversationState> ConversationStates { get; set; } = new Dictionary<long, ConversationState>();
+        private static Dictionary<long, ConversationState> ConversationStates { get; set; } = new();
 
 
 
@@ -78,7 +78,7 @@ namespace SystemicalConsensusBot
             }
             try
             {
-                Bot = new TelegramBotClient(System.IO.File.ReadAllText(keyFile));
+                Bot = new TelegramBotClient(System.IO.File.ReadAllText(keyFile).Trim());
             }
             catch
             {
@@ -90,6 +90,7 @@ namespace SystemicalConsensusBot
 
         static void Main()
         {
+
             using var cts = new CancellationTokenSource();
 
             Username = Bot.GetMeAsync().Result.Username;
@@ -109,14 +110,11 @@ namespace SystemicalConsensusBot
             cancellationToken: cts.Token
             );
 
-
-
-
             Console.WriteLine($"Server started listening, Bot ready");
 
             while (Console.ReadLine() != "/stop")
             {
-
+                Console.WriteLine("write /stop to stop.");
             }
 
             Console.WriteLine("Exiting");
